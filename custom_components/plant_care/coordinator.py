@@ -102,7 +102,14 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         next_water = _parse(live[CONF_NEXT_WATER])
         next_feed = _parse(live[CONF_NEXT_FEED])
         moisture = self._moisture(cfg_moisture_sensor)
-        if cfg_moisture_sensor and cfg_moisture_threshold is not None:
+        # Only trust the moisture reading when it is actually known. If the
+        # sensor is unavailable/unknown/non-numeric, fall back to the calendar
+        # so an overdue plant still reports "due" instead of silently "not due".
+        if (
+            cfg_moisture_sensor
+            and cfg_moisture_threshold is not None
+            and moisture is not None
+        ):
             needs_water = is_moisture_due(moisture, cfg_moisture_threshold)
         else:
             needs_water = is_calendar_due(next_water, today)
