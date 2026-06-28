@@ -23,6 +23,7 @@
   "config_subentries": {
     "plant": {
       "entry_type": "Plant",
+      "initiate_flow": {"user": "Add plant", "reconfigure": "Reconfigure plant"},
       "step": {
         "user": {
           "title": "Add plant",

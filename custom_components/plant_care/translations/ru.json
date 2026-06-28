@@ -23,6 +23,7 @@
   "config_subentries": {
     "plant": {
       "entry_type": "Растение",
+      "initiate_flow": {"user": "Добавить растение", "reconfigure": "Перенастроить растение"},
       "step": {
         "user": {
           "title": "Добавить растение",
