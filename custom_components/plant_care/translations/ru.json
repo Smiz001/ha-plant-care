@@ -1,0 +1,77 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Plant Care",
+        "description": "Добавьте хаб Plant Care. Затем добавляйте растения внутри него."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Plant Care уже настроен. Добавляйте растения внутри него."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "reminder_time": "Время напоминаний",
+          "notify_target": "Сервис уведомлений (например, notify.telegram)"
+        }
+      }
+    }
+  },
+  "config_subentries": {
+    "plant": {
+      "title": "Растение",
+      "step": {
+        "user": {
+          "title": "Добавить растение",
+          "data": {
+            "name": "Название",
+            "emoji": "Эмодзи",
+            "water_interval": "Интервал полива (дни)",
+            "feed_interval": "Интервал подкормки (дни)",
+            "next_water": "Следующий полив",
+            "next_feed": "Следующая подкормка",
+            "moisture_sensor": "Датчик влажности почвы (опционально)",
+            "moisture_threshold": "Порог влажности (%)"
+          }
+        },
+        "reconfigure": {
+          "title": "Изменить растение",
+          "data": {
+            "name": "Название",
+            "emoji": "Эмодзи",
+            "moisture_sensor": "Датчик влажности почвы (опционально)",
+            "moisture_threshold": "Порог влажности (%)"
+          }
+        }
+      },
+      "abort": {
+        "reconfigure_successful": "Растение обновлено."
+      }
+    }
+  },
+  "entity": {
+    "number": {
+      "water_interval": {"name": "Интервал полива"},
+      "feed_interval": {"name": "Интервал подкормки"}
+    },
+    "date": {
+      "next_water": {"name": "Следующий полив"},
+      "next_feed": {"name": "Следующая подкормка"}
+    },
+    "sensor": {
+      "days_to_water": {"name": "Дней до полива"},
+      "days_to_feed": {"name": "Дней до подкормки"}
+    },
+    "binary_sensor": {
+      "needs_water": {"name": "Требуется полив"},
+      "needs_feed": {"name": "Требуется подкормка"}
+    },
+    "button": {
+      "watered": {"name": "Отметить полив"},
+      "fed": {"name": "Отметить подкормку"}
+    }
+  }
+}

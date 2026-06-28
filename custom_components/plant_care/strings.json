@@ -1,0 +1,77 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Plant Care",
+        "description": "Add the Plant Care hub. Then add plants inside it."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Plant Care is already set up. Add plants inside it."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "reminder_time": "Reminder time",
+          "notify_target": "Notify service (e.g. notify.telegram)"
+        }
+      }
+    }
+  },
+  "config_subentries": {
+    "plant": {
+      "title": "Plant",
+      "step": {
+        "user": {
+          "title": "Add plant",
+          "data": {
+            "name": "Name",
+            "emoji": "Emoji",
+            "water_interval": "Watering interval (days)",
+            "feed_interval": "Feeding interval (days)",
+            "next_water": "Next watering",
+            "next_feed": "Next feeding",
+            "moisture_sensor": "Soil moisture sensor (optional)",
+            "moisture_threshold": "Moisture threshold (%)"
+          }
+        },
+        "reconfigure": {
+          "title": "Edit plant",
+          "data": {
+            "name": "Name",
+            "emoji": "Emoji",
+            "moisture_sensor": "Soil moisture sensor (optional)",
+            "moisture_threshold": "Moisture threshold (%)"
+          }
+        }
+      },
+      "abort": {
+        "reconfigure_successful": "Plant updated."
+      }
+    }
+  },
+  "entity": {
+    "number": {
+      "water_interval": {"name": "Water interval"},
+      "feed_interval": {"name": "Feed interval"}
+    },
+    "date": {
+      "next_water": {"name": "Next watering"},
+      "next_feed": {"name": "Next feeding"}
+    },
+    "sensor": {
+      "days_to_water": {"name": "Days to watering"},
+      "days_to_feed": {"name": "Days to feeding"}
+    },
+    "binary_sensor": {
+      "needs_water": {"name": "Needs watering"},
+      "needs_feed": {"name": "Needs feeding"}
+    },
+    "button": {
+      "watered": {"name": "Mark watered"},
+      "fed": {"name": "Mark fed"}
+    }
+  }
+}
