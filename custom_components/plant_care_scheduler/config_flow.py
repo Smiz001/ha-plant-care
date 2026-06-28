@@ -14,12 +14,13 @@ from homeassistant.config_entries import (
     SubentryFlowResult,
 )
 from homeassistant.core import callback
-from homeassistant.helpers import selector
+from homeassistant.helpers import entity_registry as er, selector
 from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_EMOJI,
     CONF_FEED_INTERVAL,
+    CONF_FEEDING_ENABLED,
     CONF_MOISTURE_SENSOR,
     CONF_MOISTURE_THRESHOLD,
     CONF_NAME,
@@ -86,6 +87,10 @@ def _plant_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
         ),
         _req_date(CONF_NEXT_WATER, d): selector.DateSelector(),
         _req_date(CONF_NEXT_FEED, d): selector.DateSelector(),
+        vol.Optional(
+            CONF_FEEDING_ENABLED,
+            default=d.get(CONF_FEEDING_ENABLED, True),
+        ): selector.BooleanSelector(),
         _opt(CONF_MOISTURE_SENSOR, d): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", device_class="moisture")
         ),
@@ -107,6 +112,25 @@ def _req_date(key: str, defaults: dict[str, Any]) -> vol.Required:
     if val is None:
         return vol.Required(key)
     return vol.Required(key, default=val)
+
+
+# (platform, unique_id suffix) of each per-plant feed entity.
+_FEED_ENTITIES = (
+    ("number", "feed_interval"),
+    ("date", "next_feed"),
+    ("sensor", "days_to_feed"),
+    ("binary_sensor", "needs_feed"),
+    ("button", "fed"),
+)
+
+
+def _remove_feed_entities(hass, subentry_id: str) -> None:
+    """Unregister this plant's feed entities (used when feeding is disabled)."""
+    reg = er.async_get(hass)
+    for platform, suffix in _FEED_ENTITIES:
+        eid = reg.async_get_entity_id(platform, DOMAIN, f"{subentry_id}_{suffix}")
+        if eid:
+            reg.async_remove(eid)
 
 
 class PlantCareConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -173,6 +197,7 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 CONF_FEED_INTERVAL: int(user_input[CONF_FEED_INTERVAL]),
                 CONF_NEXT_WATER: user_input[CONF_NEXT_WATER],
                 CONF_NEXT_FEED: user_input[CONF_NEXT_FEED],
+                CONF_FEEDING_ENABLED: bool(user_input.get(CONF_FEEDING_ENABLED, True)),
                 CONF_MOISTURE_SENSOR: user_input.get(CONF_MOISTURE_SENSOR) or None,
                 CONF_MOISTURE_THRESHOLD: user_input.get(CONF_MOISTURE_THRESHOLD),
                 CONF_SCHEMA_VERSION: SCHEMA_VERSION,
@@ -195,6 +220,7 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 **subentry.data,
                 CONF_NAME: user_input[CONF_NAME],
                 CONF_EMOJI: user_input.get(CONF_EMOJI) or DEFAULT_EMOJI,
+                CONF_FEEDING_ENABLED: bool(user_input.get(CONF_FEEDING_ENABLED, True)),
                 CONF_MOISTURE_SENSOR: user_input.get(CONF_MOISTURE_SENSOR) or None,
                 CONF_MOISTURE_THRESHOLD: user_input.get(CONF_MOISTURE_THRESHOLD),
                 CONF_SCHEMA_VERSION: SCHEMA_VERSION,
@@ -235,6 +261,12 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 ):
                     new_data.pop(k, None)
                 await coord.async_clear_treatment(subentry.subentry_id)
+            # Feeding turned off: the platforms will stop adding the feed
+            # entities on reload, but HA leaves the already-registered ones as
+            # orphans (auto-prune only happens on subentry removal). Remove them
+            # explicitly so the device doesn't keep stale, unavailable entities.
+            if not new_data[CONF_FEEDING_ENABLED]:
+                _remove_feed_entities(self.hass, subentry.subentry_id)
             return self.async_update_and_abort(
                 self._get_entry(),
                 subentry,
@@ -255,6 +287,12 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 vol.Optional(
                     CONF_EMOJI, default=d.get(CONF_EMOJI, DEFAULT_EMOJI)
                 ): selector.TextSelector(),
+                # Feeding toggle: a plain bool with a static True default so a
+                # v0.3.x plant (no key) defaults to enabled. Pre-fills from
+                # subentry.data via add_suggested_values_to_schema below.
+                vol.Optional(
+                    CONF_FEEDING_ENABLED, default=True
+                ): selector.BooleanSelector(),
                 vol.Optional(CONF_MOISTURE_SENSOR): selector.EntitySelector(
                     selector.EntitySelectorConfig(
                         domain="sensor", device_class="moisture"

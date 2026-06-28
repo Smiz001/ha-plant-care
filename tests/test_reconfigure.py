@@ -3,6 +3,7 @@ from datetime import date
 
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import entity_registry as er
 
 from custom_components.plant_care_scheduler.const import (
     CONF_EMOJI, CONF_MOISTURE_SENSOR, CONF_MOISTURE_THRESHOLD, CONF_NAME,
@@ -140,3 +141,16 @@ async def test_reconfigure_edit_preserves_active_treatment_schedule(hass):
     snap = entry.runtime_data.snapshot(sid, None, None)
     assert snap["next_treatment"] == date(2026, 7, 1)
     assert snap["treatments_left"] == 4
+
+
+async def test_reconfigure_can_disable_feeding(hass):
+    entry, sid = await setup_one_plant(hass)  # feeding on by default
+    reg = er.async_get(hass)
+    assert reg.async_get_entity_id("binary_sensor", "plant_care_scheduler", f"{sid}_needs_feed") is not None
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, "plant"), context={"source": "reconfigure", "subentry_id": sid})
+    # submit existing name/emoji but feeding_enabled False
+    await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"name": "Жасмин", "emoji": "🌼", "feeding_enabled": False})
+    await hass.async_block_till_done()
+    assert reg.async_get_entity_id("binary_sensor", "plant_care_scheduler", f"{sid}_needs_feed") is None
