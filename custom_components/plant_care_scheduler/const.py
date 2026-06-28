@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from homeassistant.const import Platform
 
-DOMAIN = "plant_care"
+DOMAIN = "plant_care_scheduler"
 PLATFORMS: list[Platform] = [
     Platform.NUMBER,
     Platform.DATE,

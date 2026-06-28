@@ -20,7 +20,7 @@ async def async_setup_entry(
 
 class PlantCareCalendar(CalendarEntity):
     _attr_has_entity_name = False
-    _attr_name = "Plant Care"
+    _attr_name = "Plant Care Scheduler"
     _attr_should_poll = False
 
     def __init__(self, coordinator: PlantCareCoordinator, entry) -> None:

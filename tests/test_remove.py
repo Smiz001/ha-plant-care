@@ -2,7 +2,7 @@
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
-from custom_components.plant_care.const import DOMAIN
+from custom_components.plant_care_scheduler.const import DOMAIN
 from tests.helpers import setup_one_plant
 
 
@@ -14,7 +14,7 @@ async def test_remove_subentry_prunes_everything(hass: HomeAssistant):
     assert dr.async_get(hass).async_get_device({(DOMAIN, sid)}) is not None
     ent_reg = er.async_get(hass)
     assert (
-        ent_reg.async_get_entity_id("number", "plant_care", f"{sid}_water_interval")
+        ent_reg.async_get_entity_id("number", "plant_care_scheduler", f"{sid}_water_interval")
         is not None
     )
 
@@ -26,7 +26,7 @@ async def test_remove_subentry_prunes_everything(hass: HomeAssistant):
     # Gone afterwards: live values pruned, entity unregistered, device removed.
     assert sid not in entry.runtime_data._live
     assert (
-        ent_reg.async_get_entity_id("number", "plant_care", f"{sid}_water_interval")
+        ent_reg.async_get_entity_id("number", "plant_care_scheduler", f"{sid}_water_interval")
         is None
     )
     assert dr.async_get(hass).async_get_device({(DOMAIN, sid)}) is None

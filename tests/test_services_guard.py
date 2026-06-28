@@ -11,7 +11,7 @@ async def test_out_of_range_interval_rejected(hass: HomeAssistant):
     # interval must remain unchanged (no partial/corrupt write).
     entry, sid = await setup_one_plant(hass)
     reg = er.async_get(hass)
-    ent = reg.async_get_entity_id("number", "plant_care", f"{sid}_water_interval")
+    ent = reg.async_get_entity_id("number", "plant_care_scheduler", f"{sid}_water_interval")
 
     for bad in (0, 999):
         with pytest.raises(Exception):
@@ -25,7 +25,7 @@ async def test_invalid_date_rejected(hass: HomeAssistant):
     # A non-date value must raise and leave next_water untouched.
     entry, sid = await setup_one_plant(hass)
     reg = er.async_get(hass)
-    ent = reg.async_get_entity_id("date", "plant_care", f"{sid}_next_water")
+    ent = reg.async_get_entity_id("date", "plant_care_scheduler", f"{sid}_next_water")
 
     with pytest.raises(Exception):
         await hass.services.async_call(

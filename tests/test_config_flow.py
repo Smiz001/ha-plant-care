@@ -1,7 +1,7 @@
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.plant_care.const import DOMAIN
+from custom_components.plant_care_scheduler.const import DOMAIN
 
 
 async def test_user_creates_single_hub(hass: HomeAssistant):

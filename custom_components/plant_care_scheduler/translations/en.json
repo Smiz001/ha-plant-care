@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Plant Care",
-        "description": "Add the Plant Care hub. Then add plants inside it."
+        "title": "Plant Care Scheduler",
+        "description": "Add the Plant Care Scheduler hub. Then add plants inside it."
       }
     },
     "abort": {
-      "single_instance_allowed": "Plant Care is already set up. Add plants inside it."
+      "single_instance_allowed": "Plant Care Scheduler is already set up. Add plants inside it."
     }
   },
   "options": {

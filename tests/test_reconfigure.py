@@ -2,7 +2,7 @@
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.plant_care.const import (
+from custom_components.plant_care_scheduler.const import (
     CONF_EMOJI, CONF_MOISTURE_SENSOR, CONF_MOISTURE_THRESHOLD, CONF_NAME,
     CONF_NEXT_WATER,
 )

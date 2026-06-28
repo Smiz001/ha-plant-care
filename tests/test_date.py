@@ -7,7 +7,7 @@ from tests.helpers import setup_one_plant
 async def test_next_water_date(hass: HomeAssistant):
     entry, sid = await setup_one_plant(hass)
     reg = er.async_get(hass)
-    ent = reg.async_get_entity_id("date", "plant_care", f"{sid}_next_water")
+    ent = reg.async_get_entity_id("date", "plant_care_scheduler", f"{sid}_next_water")
     assert ent is not None
     assert hass.states.get(ent).state == "2026-06-30"
 

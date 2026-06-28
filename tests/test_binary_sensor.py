@@ -8,7 +8,7 @@ async def test_needs_water_calendar(hass: HomeAssistant, freezer):
     freezer.move_to("2026-07-01 08:00:00")  # past 2026-06-30 -> due
     entry, sid = await setup_one_plant(hass)
     reg = er.async_get(hass)
-    ent = reg.async_get_entity_id("binary_sensor", "plant_care", f"{sid}_needs_water")
+    ent = reg.async_get_entity_id("binary_sensor", "plant_care_scheduler", f"{sid}_needs_water")
     assert ent is not None
     assert hass.states.get(ent).state == "on"
 
@@ -20,7 +20,7 @@ async def test_needs_water_moisture(hass: HomeAssistant, freezer):
         hass, moisture_sensor="sensor.test_moisture", moisture_threshold=35
     )
     reg = er.async_get(hass)
-    ent = reg.async_get_entity_id("binary_sensor", "plant_care", f"{sid}_needs_water")
+    ent = reg.async_get_entity_id("binary_sensor", "plant_care_scheduler", f"{sid}_needs_water")
     assert ent is not None
     # moisture 20 < threshold 35 -> due even though calendar isn't
     assert hass.states.get(ent).state == "on"
@@ -38,7 +38,7 @@ async def test_needs_water_updates_when_sensor_appears(hass: HomeAssistant, free
         next_water="2026-06-30",
     )
     reg = er.async_get(hass)
-    ent = reg.async_get_entity_id("binary_sensor", "plant_care", f"{sid}_needs_water")
+    ent = reg.async_get_entity_id("binary_sensor", "plant_care_scheduler", f"{sid}_needs_water")
     assert ent is not None
     assert hass.states.get(ent).state == "off"  # sensor absent, calendar not due
 
@@ -62,6 +62,6 @@ async def test_needs_water_moisture_unavailable_falls_back_to_calendar(
         next_water="2026-06-30",
     )
     reg = er.async_get(hass)
-    ent = reg.async_get_entity_id("binary_sensor", "plant_care", f"{sid}_needs_water")
+    ent = reg.async_get_entity_id("binary_sensor", "plant_care_scheduler", f"{sid}_needs_water")
     assert ent is not None
     assert hass.states.get(ent).state == "on"

@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Plant Care",
-        "description": "Добавьте хаб Plant Care. Затем добавляйте растения внутри него."
+        "title": "Plant Care Scheduler",
+        "description": "Добавьте хаб Plant Care Scheduler. Затем добавляйте растения внутри него."
       }
     },
     "abort": {
-      "single_instance_allowed": "Plant Care уже настроен. Добавляйте растения внутри него."
+      "single_instance_allowed": "Plant Care Scheduler уже настроен. Добавляйте растения внутри него."
     }
   },
   "options": {

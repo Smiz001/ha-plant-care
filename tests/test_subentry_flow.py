@@ -4,7 +4,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.plant_care.const import (
+from custom_components.plant_care_scheduler.const import (
     CONF_FEED_INTERVAL, CONF_NAME, CONF_NEXT_FEED, CONF_NEXT_WATER,
     CONF_WATER_INTERVAL, DOMAIN, SUBENTRY_TYPE,
 )

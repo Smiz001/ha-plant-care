@@ -17,7 +17,7 @@ async def test_number_uses_translation_key(hass: HomeAssistant):
     hass.config.language = "ru"
     entry, sid = await setup_one_plant(hass)
     reg = er.async_get(hass)
-    ent_id = reg.async_get_entity_id("number", "plant_care", f"{sid}_water_interval")
+    ent_id = reg.async_get_entity_id("number", "plant_care_scheduler", f"{sid}_water_interval")
     assert ent_id is not None
     entry_reg = reg.async_get(ent_id)
     assert entry_reg.translation_key == "water_interval"
@@ -31,7 +31,7 @@ async def test_sensor_uses_translation_key(hass: HomeAssistant):
     hass.config.language = "ru"
     entry, sid = await setup_one_plant(hass)
     reg = er.async_get(hass)
-    ent_id = reg.async_get_entity_id("sensor", "plant_care", f"{sid}_days_to_water")
+    ent_id = reg.async_get_entity_id("sensor", "plant_care_scheduler", f"{sid}_days_to_water")
     assert ent_id is not None
     entry_reg = reg.async_get(ent_id)
     assert entry_reg.translation_key == "days_to_water"

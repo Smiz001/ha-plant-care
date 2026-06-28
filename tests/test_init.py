@@ -5,13 +5,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.plant_care.const import DOMAIN
-from custom_components.plant_care.coordinator import PlantCareCoordinator
+from custom_components.plant_care_scheduler.const import DOMAIN
+from custom_components.plant_care_scheduler.coordinator import PlantCareCoordinator
 from tests.helpers import setup_one_plant
 
 
 def test_domain():
-    assert DOMAIN == "plant_care"
+    assert DOMAIN == "plant_care_scheduler"
 
 
 async def test_setup_and_unload(hass: HomeAssistant):
@@ -31,7 +31,7 @@ async def test_unload_with_plants(hass: HomeAssistant):
     # becomes unavailable and the entry reports NOT_LOADED.
     entry, sid = await setup_one_plant(hass)
     reg = er.async_get(hass)
-    ent = reg.async_get_entity_id("sensor", "plant_care", f"{sid}_days_to_water")
+    ent = reg.async_get_entity_id("sensor", "plant_care_scheduler", f"{sid}_days_to_water")
     assert ent is not None
 
     assert await hass.config_entries.async_unload(entry.entry_id)

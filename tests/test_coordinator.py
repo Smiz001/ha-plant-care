@@ -4,8 +4,8 @@ import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.plant_care.const import DEFAULT_WATER_INTERVAL, DOMAIN
-from custom_components.plant_care.coordinator import PlantCareCoordinator
+from custom_components.plant_care_scheduler.const import DEFAULT_WATER_INTERVAL, DOMAIN
+from custom_components.plant_care_scheduler.coordinator import PlantCareCoordinator
 
 
 @pytest.fixture

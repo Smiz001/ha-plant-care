@@ -1,6 +1,6 @@
 from datetime import date
 
-from custom_components.plant_care.models import (
+from custom_components.plant_care_scheduler.models import (
     PlantConfig,
     days_until,
     is_calendar_due,

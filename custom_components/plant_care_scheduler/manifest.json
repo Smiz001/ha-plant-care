@@ -1,6 +1,6 @@
 {
-  "domain": "plant_care",
-  "name": "Plant Care",
+  "domain": "plant_care_scheduler",
+  "name": "Plant Care Scheduler",
   "codeowners": [
     "@Smiz001"
   ],
@@ -10,5 +10,5 @@
   "issue_tracker": "https://github.com/Smiz001/ha-plant-care/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.1.1"
+  "version": "0.2.0"
 }

@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, patch
 
 from homeassistant.core import HomeAssistant
 
-from custom_components.plant_care.const import CONF_NOTIFY_TARGET
-from custom_components.plant_care.notify_reminder import async_send_due_reminders
+from custom_components.plant_care_scheduler.const import CONF_NOTIFY_TARGET
+from custom_components.plant_care_scheduler.notify_reminder import async_send_due_reminders
 from tests.helpers import setup_one_plant
 
 
