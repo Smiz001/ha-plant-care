@@ -36,9 +36,16 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         super().__init__(hass, _LOGGER, name=DOMAIN, config_entry=entry, update_interval=None)
-        self.entry = entry
         self._store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._live: dict[str, dict] = {}
+
+    def _plant(self, subentry_id: str) -> dict:
+        try:
+            return self._live[subentry_id]
+        except KeyError:
+            raise KeyError(
+                f"Plant {subentry_id} has no live values; ensure_seed() must run first"
+            ) from None
 
     async def async_load(self) -> None:
         self._live = await self._store.async_load() or {}
@@ -90,7 +97,7 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         cfg_moisture_sensor: str | None,
         cfg_moisture_threshold: float | None,
     ) -> dict:
-        live = self._live[subentry_id]
+        live = self._plant(subentry_id)
         today = dt_util.now().date()
         next_water = _parse(live[CONF_NEXT_WATER])
         next_feed = _parse(live[CONF_NEXT_FEED])
@@ -116,16 +123,16 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
             value = _iso(value)
         if key in (CONF_WATER_INTERVAL, CONF_FEED_INTERVAL):
             value = int(value)
-        self._live[subentry_id][key] = value
+        self._plant(subentry_id)[key] = value
         await self._save()
         self.async_update_listeners()
 
     async def async_mark_done(self, subentry_id: str, task: str) -> None:
         today = dt_util.now().date()
-        interval = self._live[subentry_id][
+        interval = self._plant(subentry_id)[
             CONF_WATER_INTERVAL if task == "water" else CONF_FEED_INTERVAL
         ]
         key = CONF_NEXT_WATER if task == "water" else CONF_NEXT_FEED
-        self._live[subentry_id][key] = _iso(next_after_action(today, interval))
+        self._plant(subentry_id)[key] = _iso(next_after_action(today, interval))
         await self._save()
         self.async_update_listeners()
