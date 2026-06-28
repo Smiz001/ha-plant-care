@@ -19,6 +19,7 @@ async def setup_one_plant(
     next_feed: str = "2026-07-06",
     moisture_sensor: str | None = None,
     moisture_threshold: float | None = None,
+    options: dict | None = None,
 ):
     """Set up the hub with exactly one plant subentry; return (entry, subentry_id)."""
     data = {
@@ -35,7 +36,7 @@ async def setup_one_plant(
     sub = ConfigSubentryData(
         data=data, subentry_type=SUBENTRY_TYPE, title="Жасмин", unique_id=None
     )
-    entry = MockConfigEntry(domain=DOMAIN, data={}, title="Plant Care", subentries_data=[sub])
+    entry = MockConfigEntry(domain=DOMAIN, data={}, title="Plant Care", subentries_data=[sub], options=options or {})
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
