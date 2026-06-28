@@ -34,6 +34,7 @@
             "feed_interval": "Feeding interval (days)",
             "next_water": "Next watering",
             "next_feed": "Next feeding",
+            "feeding_enabled": "Feeding enabled",
             "moisture_sensor": "Soil moisture sensor (optional)",
             "moisture_threshold": "Moisture threshold (%)"
           }
@@ -43,6 +44,7 @@
           "data": {
             "name": "Name",
             "emoji": "Emoji",
+            "feeding_enabled": "Feeding enabled",
             "moisture_sensor": "Soil moisture sensor (optional)",
             "moisture_threshold": "Moisture threshold (%)",
             "treatment_name": "Treatment name (empty = no treatment)",
