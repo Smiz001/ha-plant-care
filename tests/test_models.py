@@ -62,6 +62,32 @@ def test_plant_config_treatment_fields():
     assert PlantConfig.from_data({"name": "Олива"}).has_treatment is False
 
 
+def test_from_data_resilient_to_corrupt_treatment_fields():
+    # Corrupt treatment_until / treatment_interval (e.g. hand-edited storage)
+    # must not raise — from_data runs in every platform setup loop.
+    cfg = PlantConfig.from_data({
+        "name": "Клубника",
+        "treatment_name": "Фунгицид",
+        "treatment_interval": "abc",       # non-numeric
+        "treatment_until": "not-a-date",   # non-ISO
+    })
+    assert cfg.has_treatment is True
+    assert cfg.treatment_interval is None
+    assert cfg.treatment_until is None
+
+
+def test_from_data_parses_valid_treatment_fields():
+    cfg = PlantConfig.from_data({
+        "name": "Клубника",
+        "treatment_name": "Фунгицид",
+        "treatment_interval": "3",
+        "treatment_until": "2026-07-15",
+    })
+    from datetime import date
+    assert cfg.treatment_interval == 3
+    assert cfg.treatment_until == date(2026, 7, 15)
+
+
 def test_treatment_finished():
     t = _date(2026, 6, 28)
     assert treatment_finished(0, None, t) is True

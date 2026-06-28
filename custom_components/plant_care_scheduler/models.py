@@ -42,15 +42,27 @@ class PlantConfig:
                 threshold = None
         t_name = data.get(CONF_TREATMENT_NAME) or None
         t_int = data.get(CONF_TREATMENT_INTERVAL)
+        if t_int is not None:
+            try:
+                t_int = int(t_int)
+            except (TypeError, ValueError):
+                t_int = None
         t_until = data.get(CONF_TREATMENT_UNTIL)
+        if t_until:
+            try:
+                t_until = date.fromisoformat(t_until)
+            except (TypeError, ValueError):
+                t_until = None
+        else:
+            t_until = None
         return cls(
             name=data[CONF_NAME],
             emoji=data.get(CONF_EMOJI) or DEFAULT_EMOJI,
             moisture_sensor=data.get(CONF_MOISTURE_SENSOR) or None,
             moisture_threshold=threshold,
             treatment_name=t_name,
-            treatment_interval=int(t_int) if t_int is not None else None,
-            treatment_until=date.fromisoformat(t_until) if t_until else None,
+            treatment_interval=t_int,
+            treatment_until=t_until,
         )
 
 
