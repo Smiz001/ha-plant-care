@@ -199,6 +199,10 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
             )
 
         d = subentry.data
+        # Moisture fields carry NO default: a default would be re-injected by
+        # voluptuous when the user clears the field, making detachment impossible.
+        # Instead we pre-fill via suggested values, so submitting without the
+        # field omits the key (-> user_input.get(...) is None -> detached).
         schema = vol.Schema(
             {
                 vol.Required(
@@ -207,21 +211,19 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 vol.Optional(
                     CONF_EMOJI, default=d.get(CONF_EMOJI, DEFAULT_EMOJI)
                 ): selector.TextSelector(),
-                _opt(CONF_MOISTURE_SENSOR, d): selector.EntitySelector(
+                vol.Optional(CONF_MOISTURE_SENSOR): selector.EntitySelector(
                     selector.EntitySelectorConfig(
                         domain="sensor", device_class="moisture"
                     )
                 ),
-                vol.Optional(
-                    CONF_MOISTURE_THRESHOLD,
-                    default=d.get(CONF_MOISTURE_THRESHOLD)
-                    if d.get(CONF_MOISTURE_THRESHOLD) is not None
-                    else DEFAULT_MOISTURE_THRESHOLD,
-                ): selector.NumberSelector(
+                vol.Optional(CONF_MOISTURE_THRESHOLD): selector.NumberSelector(
                     selector.NumberSelectorConfig(
                         min=0, max=100, mode=selector.NumberSelectorMode.BOX
                     )
                 ),
             }
         )
-        return self.async_show_form(step_id="reconfigure", data_schema=schema)
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(schema, subentry.data),
+        )
