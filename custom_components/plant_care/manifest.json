@@ -1,0 +1,12 @@
+{
+  "domain": "plant_care",
+  "name": "Plant Care",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/Smiz001/ha-plant-care",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Smiz001/ha-plant-care/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}

@@ -1,0 +1,1 @@
+"""The Plant Care integration."""
