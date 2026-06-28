@@ -24,6 +24,12 @@ async def async_send_due_reminders(hass: HomeAssistant, entry) -> None:
             "plant_care notify target %r is not 'domain.service'", target
         )
         return
+    # Precheck once: if the service is gone (renamed/removed integration), warn
+    # a single line instead of letting each due plant raise ServiceNotFound and
+    # log a full traceback every day.
+    if not hass.services.has_service(domain, service):
+        _LOGGER.warning("plant_care: notify service %s not found", target)
+        return
     coordinator = entry.runtime_data
     for subentry in entry.subentries.values():
         # One misbehaving plant must not silence reminders for the rest.
