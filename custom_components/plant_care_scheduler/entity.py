@@ -29,5 +29,10 @@ class PlantCareEntity(CoordinatorEntity[PlantCareCoordinator]):
     @property
     def _snap(self) -> dict:
         return self.coordinator.snapshot(
-            self._subentry_id, self._cfg.moisture_sensor, self._cfg.moisture_threshold
+            self._subentry_id,
+            self._cfg.moisture_sensor,
+            self._cfg.moisture_threshold,
+            self._cfg.treatment_name,
+            self._cfg.treatment_interval,
+            self._cfg.treatment_until,
         )
