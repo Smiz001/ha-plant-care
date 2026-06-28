@@ -154,7 +154,21 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
             needs_water = is_calendar_due(next_water, today)
 
         nt_raw = live.get(CONF_NEXT_TREATMENT)
-        next_treatment = date.fromisoformat(nt_raw) if nt_raw else None
+        if nt_raw:
+            try:
+                next_treatment = _parse(nt_raw)
+            except (ValueError, TypeError):
+                warn_key = f"{subentry_id}:{CONF_NEXT_TREATMENT}"
+                if warn_key not in self._warned_corrupt:
+                    self._warned_corrupt.add(warn_key)
+                    _LOGGER.warning(
+                        "plant_care: corrupt stored %s (%r); using today",
+                        CONF_NEXT_TREATMENT,
+                        nt_raw,
+                    )
+                next_treatment = today
+        else:
+            next_treatment = None
         treatments_left = live.get(CONF_TREATMENTS_LEFT)
         has_treatment = bool(treatment_name)
         finished = treatment_finished(treatments_left, treatment_until, today) if has_treatment else False
