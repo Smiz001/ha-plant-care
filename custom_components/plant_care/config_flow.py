@@ -171,3 +171,57 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
             }
             return self.async_create_entry(title=data[CONF_NAME], data=data)
         return self.async_show_form(step_id="user", data_schema=_plant_schema())
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Edit name/emoji and attach/replace the moisture sensor.
+
+        Only name, emoji, moisture sensor + threshold are editable here;
+        intervals and next-dates are owned by the number/date entities, so we
+        MERGE into the existing data to preserve everything else.
+        """
+        subentry = self._get_reconfigure_subentry()
+        if user_input is not None:
+            new_data = {
+                **subentry.data,
+                CONF_NAME: user_input[CONF_NAME],
+                CONF_EMOJI: user_input.get(CONF_EMOJI) or DEFAULT_EMOJI,
+                CONF_MOISTURE_SENSOR: user_input.get(CONF_MOISTURE_SENSOR) or None,
+                CONF_MOISTURE_THRESHOLD: user_input.get(CONF_MOISTURE_THRESHOLD),
+                CONF_SCHEMA_VERSION: SCHEMA_VERSION,
+            }
+            return self.async_update_and_abort(
+                self._get_entry(),
+                subentry,
+                data=new_data,
+                title=new_data[CONF_NAME],
+            )
+
+        d = subentry.data
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_NAME, default=d.get(CONF_NAME, "")
+                ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_EMOJI, default=d.get(CONF_EMOJI, DEFAULT_EMOJI)
+                ): selector.TextSelector(),
+                _opt(CONF_MOISTURE_SENSOR, d): selector.EntitySelector(
+                    selector.EntitySelectorConfig(
+                        domain="sensor", device_class="moisture"
+                    )
+                ),
+                vol.Optional(
+                    CONF_MOISTURE_THRESHOLD,
+                    default=d.get(CONF_MOISTURE_THRESHOLD)
+                    if d.get(CONF_MOISTURE_THRESHOLD) is not None
+                    else DEFAULT_MOISTURE_THRESHOLD,
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0, max=100, mode=selector.NumberSelectorMode.BOX
+                    )
+                ),
+            }
+        )
+        return self.async_show_form(step_id="reconfigure", data_schema=schema)
