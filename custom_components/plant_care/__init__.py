@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date as date_cls, timedelta
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_util
 
@@ -53,11 +53,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: PlantCareConfigEntry) ->
     # through the coordinator/Store and do NOT update the entry, so they don't reload.
     entry.async_on_unload(entry.add_update_listener(_async_reload))
 
+    # Date-derived state (days_to_*, needs_* via calendar) only updates when the
+    # coordinator notifies listeners. Nothing does so at the day rollover, so
+    # refresh shortly after midnight to keep those entities current.
+    @callback
+    def _midnight_refresh(now):
+        coordinator.async_update_listeners()
+
+    entry.async_on_unload(
+        async_track_time_change(hass, _midnight_refresh, hour=0, minute=0, second=10)
+    )
+
     rt = dt_util.parse_time(
         entry.options.get(CONF_REMINDER_TIME, DEFAULT_REMINDER_TIME)
     ) or dt_util.parse_time(DEFAULT_REMINDER_TIME)
 
     async def _daily(now):
+        # Refresh first so the dashboard matches what the notification says.
+        coordinator.async_update_listeners()
         await async_send_due_reminders(hass, entry)
 
     entry.async_on_unload(
