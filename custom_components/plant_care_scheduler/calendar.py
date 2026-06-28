@@ -41,7 +41,8 @@ class PlantCareCalendar(CalendarEntity):
         for subentry in self._entry.subentries.values():
             cfg = PlantConfig.from_data(dict(subentry.data))
             snap = self.coordinator.snapshot(
-                subentry.subentry_id, cfg.moisture_sensor, cfg.moisture_threshold
+                subentry.subentry_id, cfg.moisture_sensor, cfg.moisture_threshold,
+                cfg.treatment_name, cfg.treatment_interval, cfg.treatment_until,
             )
             for key, verb in ((CONF_NEXT_WATER, "Полив"), (CONF_NEXT_FEED, "Подкормка")):
                 d: date = snap[key]
@@ -50,6 +51,15 @@ class PlantCareCalendar(CalendarEntity):
                         start=d,
                         end=d + timedelta(days=1),
                         summary=f"{cfg.emoji} {verb}: {cfg.name}",
+                    )
+                )
+            if snap["treatment_active"]:
+                td: date = snap["next_treatment"]
+                events.append(
+                    CalendarEvent(
+                        start=td,
+                        end=td + timedelta(days=1),
+                        summary=f"🩹 Лечение: {cfg.name}",
                     )
                 )
         return events
