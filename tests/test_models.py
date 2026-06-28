@@ -44,3 +44,28 @@ def test_is_moisture_due():
     assert is_moisture_due(40.0, 35.0) is False
     assert is_moisture_due(None, 35.0) is False
     assert is_moisture_due(30.0, None) is False
+
+
+from datetime import date as _date
+from custom_components.plant_care_scheduler.models import treatment_finished
+
+
+def test_plant_config_treatment_fields():
+    from custom_components.plant_care_scheduler.models import PlantConfig
+    cfg = PlantConfig.from_data({
+        "name": "Клубника", "treatment_name": "Фунгицид",
+        "treatment_interval": 3, "treatment_until": "2026-07-15",
+    })
+    assert cfg.has_treatment is True
+    assert cfg.treatment_interval == 3
+    assert cfg.treatment_until == _date(2026, 7, 15)
+    assert PlantConfig.from_data({"name": "Олива"}).has_treatment is False
+
+
+def test_treatment_finished():
+    t = _date(2026, 6, 28)
+    assert treatment_finished(0, None, t) is True
+    assert treatment_finished(2, None, t) is False
+    assert treatment_finished(None, _date(2026, 6, 27), t) is True
+    assert treatment_finished(None, _date(2026, 6, 30), t) is False
+    assert treatment_finished(None, None, t) is False

@@ -38,3 +38,11 @@ DEFAULT_EMOJI = "🌱"
 DEFAULT_REMINDER_TIME = "09:00:00"
 DEFAULT_WATER_INTERVAL = 5
 DEFAULT_FEED_INTERVAL = 14
+
+# treatment (subentry.data: name/interval/until ; Store: next_treatment/treatments_left)
+CONF_TREATMENT_NAME = "treatment_name"
+CONF_TREATMENT_INTERVAL = "treatment_interval"
+CONF_TREATMENT_UNTIL = "treatment_until"
+CONF_NEXT_TREATMENT = "next_treatment"
+CONF_TREATMENTS_LEFT = "treatments_left"
+DEFAULT_TREATMENT_INTERVAL = 7

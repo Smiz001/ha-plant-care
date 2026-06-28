@@ -4,7 +4,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from .const import CONF_EMOJI, CONF_MOISTURE_SENSOR, CONF_MOISTURE_THRESHOLD, CONF_NAME, DEFAULT_EMOJI
+from .const import (
+    CONF_EMOJI,
+    CONF_MOISTURE_SENSOR,
+    CONF_MOISTURE_THRESHOLD,
+    CONF_NAME,
+    CONF_TREATMENT_INTERVAL,
+    CONF_TREATMENT_NAME,
+    CONF_TREATMENT_UNTIL,
+    DEFAULT_EMOJI,
+)
 
 
 @dataclass(frozen=True)
@@ -15,6 +24,13 @@ class PlantConfig:
     emoji: str
     moisture_sensor: str | None
     moisture_threshold: float | None
+    treatment_name: str | None
+    treatment_interval: int | None
+    treatment_until: date | None
+
+    @property
+    def has_treatment(self) -> bool:
+        return bool(self.treatment_name)
 
     @classmethod
     def from_data(cls, data: dict) -> "PlantConfig":
@@ -24,11 +40,17 @@ class PlantConfig:
                 threshold = float(threshold)
             except (TypeError, ValueError):
                 threshold = None
+        t_name = data.get(CONF_TREATMENT_NAME) or None
+        t_int = data.get(CONF_TREATMENT_INTERVAL)
+        t_until = data.get(CONF_TREATMENT_UNTIL)
         return cls(
             name=data[CONF_NAME],
             emoji=data.get(CONF_EMOJI) or DEFAULT_EMOJI,
             moisture_sensor=data.get(CONF_MOISTURE_SENSOR) or None,
             moisture_threshold=threshold,
+            treatment_name=t_name,
+            treatment_interval=int(t_int) if t_int is not None else None,
+            treatment_until=date.fromisoformat(t_until) if t_until else None,
         )
 
 
@@ -52,3 +74,12 @@ def is_moisture_due(moisture: float | None, threshold: float | None) -> bool:
     if moisture is None or threshold is None:
         return False
     return moisture < threshold
+
+
+def treatment_finished(treatments_left, treatment_until, today: date) -> bool:
+    """Course is done when the count is used up or the end date has passed."""
+    if treatments_left is not None and treatments_left <= 0:
+        return True
+    if treatment_until is not None and today > treatment_until:
+        return True
+    return False
