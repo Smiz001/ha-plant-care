@@ -19,11 +19,16 @@ class PlantConfig:
     @classmethod
     def from_data(cls, data: dict) -> "PlantConfig":
         threshold = data.get(CONF_MOISTURE_THRESHOLD)
+        if threshold is not None:
+            try:
+                threshold = float(threshold)
+            except (TypeError, ValueError):
+                threshold = None
         return cls(
             name=data[CONF_NAME],
             emoji=data.get(CONF_EMOJI) or DEFAULT_EMOJI,
             moisture_sensor=data.get(CONF_MOISTURE_SENSOR) or None,
-            moisture_threshold=float(threshold) if threshold is not None else None,
+            moisture_threshold=threshold,
         )
 
 

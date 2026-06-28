@@ -39,3 +39,21 @@ async def test_mark_done_reschedules(hass, entry, freezer):
     snap = coord.snapshot("sub1", None, None)
     assert snap["next_water"] == date(2026, 7, 3)  # today + 5
     assert snap["needs_water"] is False
+
+
+async def test_snapshot_survives_corrupt_stored_date(hass, entry, freezer):
+    # A corrupt/missing stored date must not break all of the plant's entities;
+    # snapshot() should return a valid dict and read "due" (fall back to today).
+    freezer.move_to("2026-06-28 08:00:00")
+    coord = PlantCareCoordinator(hass, entry)
+    await coord.async_load()
+    coord.ensure_seed("sub1", 5, 14, date(2026, 6, 30), date(2026, 7, 6))
+    # Corrupt the stored next_water via the coordinator's internal store dict.
+    coord._live["sub1"]["next_water"] = "not-a-date"
+
+    snap = coord.snapshot("sub1", None, None)  # must not raise
+
+    assert isinstance(snap, dict)
+    assert snap["next_water"] == date(2026, 6, 28)  # fell back to today
+    assert snap["needs_water"] is True  # today <= today -> due
+    assert snap["next_feed"] == date(2026, 7, 6)  # other date untouched

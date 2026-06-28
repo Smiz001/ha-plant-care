@@ -38,6 +38,27 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         super().__init__(hass, _LOGGER, name=DOMAIN, config_entry=entry, update_interval=None)
         self._store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._live: dict[str, dict] = {}
+        self._warned_corrupt: set[str] = set()
+
+    def _parse_or_today(self, live: dict, key: str, today: date) -> date:
+        """Parse a stored ISO date; fall back to today if corrupt/missing.
+
+        A bad value would otherwise raise and break all of the plant's
+        entities; treating it as "due today" keeps the plant visible and
+        recoverable (the user can re-set the date).
+        """
+        try:
+            return _parse(live[key])
+        except (KeyError, ValueError, TypeError):
+            warn_key = f"{id(live)}:{key}"
+            if warn_key not in self._warned_corrupt:
+                self._warned_corrupt.add(warn_key)
+                _LOGGER.warning(
+                    "plant_care: corrupt/missing stored %s (%r); using today",
+                    key,
+                    live.get(key),
+                )
+            return today
 
     def _plant(self, subentry_id: str) -> dict:
         try:
@@ -99,8 +120,8 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
     ) -> dict:
         live = self._plant(subentry_id)
         today = dt_util.now().date()
-        next_water = _parse(live[CONF_NEXT_WATER])
-        next_feed = _parse(live[CONF_NEXT_FEED])
+        next_water = self._parse_or_today(live, CONF_NEXT_WATER, today)
+        next_feed = self._parse_or_today(live, CONF_NEXT_FEED, today)
         moisture = self._moisture(cfg_moisture_sensor)
         # Only trust the moisture reading when it is actually known. If the
         # sensor is unavailable/unknown/non-numeric, fall back to the calendar

@@ -17,6 +17,12 @@ def test_plant_config_from_data_defaults():
     assert cfg.moisture_threshold is None
 
 
+def test_plant_config_non_numeric_threshold_is_none():
+    # A non-numeric threshold must not raise; it falls back to None.
+    cfg = PlantConfig.from_data({"name": "Жасмин", "moisture_threshold": "abc"})
+    assert cfg.moisture_threshold is None
+
+
 def test_days_until():
     assert days_until(date(2026, 7, 1), date(2026, 6, 28)) == 3
     assert days_until(date(2026, 6, 28), date(2026, 6, 28)) == 0
