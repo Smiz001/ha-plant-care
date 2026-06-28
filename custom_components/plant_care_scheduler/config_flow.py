@@ -1,6 +1,7 @@
 """Config + options flow for Plant Care."""
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 import voluptuous as vol
@@ -14,6 +15,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers import selector
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_EMOJI,
@@ -22,14 +24,20 @@ from .const import (
     CONF_MOISTURE_THRESHOLD,
     CONF_NAME,
     CONF_NEXT_FEED,
+    CONF_NEXT_TREATMENT,
     CONF_NEXT_WATER,
     CONF_NOTIFY_TARGET,
     CONF_REMINDER_TIME,
     CONF_SCHEMA_VERSION,
+    CONF_TREATMENT_INTERVAL,
+    CONF_TREATMENT_NAME,
+    CONF_TREATMENT_UNTIL,
+    CONF_TREATMENTS_LEFT,
     CONF_WATER_INTERVAL,
     DEFAULT_EMOJI,
     DEFAULT_FEED_INTERVAL,
     DEFAULT_REMINDER_TIME,
+    DEFAULT_TREATMENT_INTERVAL,
     DEFAULT_WATER_INTERVAL,
     DOMAIN,
     SCHEMA_VERSION,
@@ -191,6 +199,36 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 CONF_MOISTURE_THRESHOLD: user_input.get(CONF_MOISTURE_THRESHOLD),
                 CONF_SCHEMA_VERSION: SCHEMA_VERSION,
             }
+            # Treatment: a non-empty name starts/edits a course; an empty (or
+            # missing) name stops it. The schedule (next_treatment/left) lives
+            # in the coordinator Store, the config (name/interval/until) in
+            # subentry.data.
+            t_name = (user_input.get(CONF_TREATMENT_NAME) or "").strip()
+            coord = self._get_entry().runtime_data
+            if t_name:
+                new_data[CONF_TREATMENT_NAME] = t_name
+                new_data[CONF_TREATMENT_INTERVAL] = int(
+                    user_input.get(CONF_TREATMENT_INTERVAL)
+                    or DEFAULT_TREATMENT_INTERVAL
+                )
+                new_data[CONF_TREATMENT_UNTIL] = (
+                    user_input.get(CONF_TREATMENT_UNTIL) or None
+                )
+                nt = user_input.get(CONF_NEXT_TREATMENT)
+                left = user_input.get(CONF_TREATMENTS_LEFT)
+                await coord.async_set_treatment(
+                    subentry.subentry_id,
+                    date.fromisoformat(nt) if nt else dt_util.now().date(),
+                    int(left) if left is not None else None,
+                )
+            else:
+                for k in (
+                    CONF_TREATMENT_NAME,
+                    CONF_TREATMENT_INTERVAL,
+                    CONF_TREATMENT_UNTIL,
+                ):
+                    new_data.pop(k, None)
+                await coord.async_clear_treatment(subentry.subentry_id)
             return self.async_update_and_abort(
                 self._get_entry(),
                 subentry,
@@ -221,6 +259,24 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                         min=0, max=100, mode=selector.NumberSelectorMode.BOX
                     )
                 ),
+                # Treatment fields: optional, pre-filled via suggested values
+                # (same mechanism as moisture) so clearing the name stops the
+                # course. Only the interval carries a static default.
+                vol.Optional(CONF_TREATMENT_NAME): selector.TextSelector(),
+                vol.Optional(
+                    CONF_TREATMENT_INTERVAL, default=DEFAULT_TREATMENT_INTERVAL
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=1, max=365, step=1, mode=selector.NumberSelectorMode.BOX
+                    )
+                ),
+                vol.Optional(CONF_NEXT_TREATMENT): selector.DateSelector(),
+                vol.Optional(CONF_TREATMENTS_LEFT): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=1, max=99, step=1, mode=selector.NumberSelectorMode.BOX
+                    )
+                ),
+                vol.Optional(CONF_TREATMENT_UNTIL): selector.DateSelector(),
             }
         )
         return self.async_show_form(
