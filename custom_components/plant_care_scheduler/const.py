@@ -22,6 +22,7 @@ CONF_NAME = "name"
 CONF_EMOJI = "emoji"
 CONF_MOISTURE_SENSOR = "moisture_sensor"
 CONF_MOISTURE_THRESHOLD = "moisture_threshold"
+CONF_FEEDING_ENABLED = "feeding_enabled"
 CONF_SCHEMA_VERSION = "schema_version"
 
 # Store keys (live values) + add-plant seed fields

@@ -6,6 +6,7 @@ from datetime import date, timedelta
 
 from .const import (
     CONF_EMOJI,
+    CONF_FEEDING_ENABLED,
     CONF_MOISTURE_SENSOR,
     CONF_MOISTURE_THRESHOLD,
     CONF_NAME,
@@ -24,6 +25,7 @@ class PlantConfig:
     emoji: str
     moisture_sensor: str | None
     moisture_threshold: float | None
+    feeding_enabled: bool
     treatment_name: str | None
     treatment_interval: int | None
     treatment_until: date | None
@@ -60,6 +62,7 @@ class PlantConfig:
             emoji=data.get(CONF_EMOJI) or DEFAULT_EMOJI,
             moisture_sensor=data.get(CONF_MOISTURE_SENSOR) or None,
             moisture_threshold=threshold,
+            feeding_enabled=bool(data.get(CONF_FEEDING_ENABLED, True)),
             treatment_name=t_name,
             treatment_interval=t_int,
             treatment_until=t_until,

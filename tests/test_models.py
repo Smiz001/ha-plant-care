@@ -23,6 +23,16 @@ def test_plant_config_non_numeric_threshold_is_none():
     assert cfg.moisture_threshold is None
 
 
+def test_feeding_enabled_defaults_true_when_absent():
+    cfg = PlantConfig.from_data({"name": "X"})  # v0.3.x format, no key
+    assert cfg.feeding_enabled is True
+
+
+def test_feeding_enabled_false_when_set():
+    cfg = PlantConfig.from_data({"name": "X", "feeding_enabled": False})
+    assert cfg.feeding_enabled is False
+
+
 def test_days_until():
     assert days_until(date(2026, 7, 1), date(2026, 6, 28)) == 3
     assert days_until(date(2026, 6, 28), date(2026, 6, 28)) == 0
