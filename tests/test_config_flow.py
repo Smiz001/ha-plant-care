@@ -9,7 +9,7 @@ async def test_user_creates_single_hub(hass: HomeAssistant):
         DOMAIN, context={"source": "user"}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Plant Care"
+    assert result["title"] == "Plant Care Scheduler"
 
     # single_config_entry: a second attempt is aborted
     result2 = await hass.config_entries.flow.async_init(

@@ -111,7 +111,7 @@ class PlantCareConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
-        return self.async_create_entry(title="Plant Care", data={})
+        return self.async_create_entry(title="Plant Care Scheduler", data={})
 
     @staticmethod
     @callback

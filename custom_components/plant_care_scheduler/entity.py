@@ -22,7 +22,7 @@ class PlantCareEntity(CoordinatorEntity[PlantCareCoordinator]):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=f"{self._cfg.emoji} {self._cfg.name}",
-            manufacturer="Plant Care",
+            manufacturer="Plant Care Scheduler",
             model="Plant",
         )
 
