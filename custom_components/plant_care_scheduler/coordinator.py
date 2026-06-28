@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import math
-from datetime import date
+from datetime import date, timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -14,14 +14,16 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_FEED_INTERVAL,
     CONF_NEXT_FEED,
+    CONF_NEXT_TREATMENT,
     CONF_NEXT_WATER,
+    CONF_TREATMENTS_LEFT,
     CONF_WATER_INTERVAL,
     DEFAULT_FEED_INTERVAL,
     DEFAULT_WATER_INTERVAL,
     DOMAIN,
     STORAGE_VERSION,
 )
-from .models import days_until, is_calendar_due, is_moisture_due, next_after_action
+from .models import days_until, is_calendar_due, is_moisture_due, next_after_action, treatment_finished
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -130,6 +132,9 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         subentry_id: str,
         cfg_moisture_sensor: str | None,
         cfg_moisture_threshold: float | None,
+        treatment_name: str | None = None,
+        treatment_interval: int | None = None,
+        treatment_until=None,
     ) -> dict:
         live = self._plant(subentry_id)
         today = dt_util.now().date()
@@ -147,6 +152,18 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
             needs_water = is_moisture_due(moisture, cfg_moisture_threshold)
         else:
             needs_water = is_calendar_due(next_water, today)
+
+        nt_raw = live.get(CONF_NEXT_TREATMENT)
+        next_treatment = date.fromisoformat(nt_raw) if nt_raw else None
+        treatments_left = live.get(CONF_TREATMENTS_LEFT)
+        has_treatment = bool(treatment_name)
+        finished = treatment_finished(treatments_left, treatment_until, today) if has_treatment else False
+        # A treatment is only active when a schedule is configured (name set),
+        # the course is not finished, AND a next_treatment date is actually
+        # stored (i.e. the course has been started / not cleared).
+        treatment_active = has_treatment and not finished and next_treatment is not None
+        needs_treatment = bool(treatment_active and next_treatment <= today)
+
         return {
             # Default missing interval keys: a partial/older Store must not
             # KeyError and break every entity for this plant.
@@ -159,6 +176,12 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
             "needs_water": needs_water,
             "needs_feed": is_calendar_due(next_feed, today),
             "moisture": moisture,
+            "treatment_active": treatment_active,
+            "needs_treatment": needs_treatment,
+            "next_treatment": next_treatment,
+            "treatments_left": treatments_left,
+            "days_to_treatment": (next_treatment - today).days if next_treatment else None,
+            "treatment_name": treatment_name,
         }
 
     async def async_set_value(self, subentry_id: str, key: str, value) -> None:
@@ -177,5 +200,28 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         ]
         key = CONF_NEXT_WATER if task == "water" else CONF_NEXT_FEED
         self._plant(subentry_id)[key] = _iso(next_after_action(today, interval))
+        await self._save()
+        self.async_update_listeners()
+
+    async def async_set_treatment(self, subentry_id: str, next_treatment: date, treatments_left: int) -> None:
+        p = self._plant(subentry_id)
+        p[CONF_NEXT_TREATMENT] = next_treatment.isoformat()
+        p[CONF_TREATMENTS_LEFT] = treatments_left
+        await self._save()
+        self.async_update_listeners()
+
+    async def async_clear_treatment(self, subentry_id: str) -> None:
+        p = self._plant(subentry_id)
+        p.pop(CONF_NEXT_TREATMENT, None)
+        p.pop(CONF_TREATMENTS_LEFT, None)
+        await self._save()
+        self.async_update_listeners()
+
+    async def async_mark_treated(self, subentry_id: str, interval: int) -> None:
+        p = self._plant(subentry_id)
+        today = dt_util.now().date()
+        if p.get(CONF_TREATMENTS_LEFT) is not None:
+            p[CONF_TREATMENTS_LEFT] = int(p[CONF_TREATMENTS_LEFT]) - 1
+        p[CONF_NEXT_TREATMENT] = (today + timedelta(days=int(interval))).isoformat()
         await self._save()
         self.async_update_listeners()

@@ -96,3 +96,28 @@ async def test_snapshot_survives_partial_store_missing_interval(hass, entry, fre
     assert isinstance(snap, dict)
     assert snap["water_interval"] == DEFAULT_WATER_INTERVAL
     assert snap["feed_interval"] == 14  # still present, untouched
+
+
+async def test_treatment_snapshot_and_mark(hass, entry, freezer):
+    freezer.move_to("2026-06-28 08:00:00")
+    from custom_components.plant_care_scheduler.coordinator import PlantCareCoordinator
+    coord = PlantCareCoordinator(hass, entry)
+    await coord.async_load()
+    coord.ensure_seed("sub1", 5, 14, date(2026, 7, 1), date(2026, 7, 6))
+    snap = coord.snapshot("sub1", None, None)
+    assert snap["treatment_active"] is False
+    assert snap["needs_treatment"] is False
+    await coord.async_set_treatment("sub1", date(2026, 6, 28), 3)
+    snap = coord.snapshot("sub1", None, None, treatment_name="Фунгицид", treatment_interval=3, treatment_until=None)
+    assert snap["treatment_active"] is True
+    assert snap["needs_treatment"] is True
+    assert snap["treatments_left"] == 3
+    assert snap["days_to_treatment"] == 0
+    await coord.async_mark_treated("sub1", 3)
+    snap = coord.snapshot("sub1", None, None, treatment_name="Фунгицид", treatment_interval=3, treatment_until=None)
+    assert snap["next_treatment"] == date(2026, 7, 1)
+    assert snap["treatments_left"] == 2
+    assert snap["needs_treatment"] is False
+    await coord.async_clear_treatment("sub1")
+    snap = coord.snapshot("sub1", None, None, treatment_name="Фунгицид", treatment_interval=3)
+    assert snap["treatment_active"] is False
