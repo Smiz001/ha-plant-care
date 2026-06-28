@@ -32,3 +32,17 @@ async def test_reminder_noop_without_target(hass: HomeAssistant, freezer):
     ) as call:
         await async_send_due_reminders(hass, entry)
     assert call.await_count == 0
+
+
+async def test_reminder_invalid_target_no_call(hass: HomeAssistant, freezer):
+    # "notify." passes a naive `"." in target` check but splits to an empty
+    # service -> must NOT raise and must make zero notify calls.
+    freezer.move_to("2026-07-01 09:00:00")  # plant is due
+    entry, sid = await setup_one_plant(
+        hass, options={CONF_NOTIFY_TARGET: "notify."}
+    )
+    with patch(
+        "homeassistant.core.ServiceRegistry.async_call", new_callable=AsyncMock
+    ) as call:
+        await async_send_due_reminders(hass, entry)  # must not raise
+    assert call.await_count == 0
