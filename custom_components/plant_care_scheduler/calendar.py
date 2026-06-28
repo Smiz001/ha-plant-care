@@ -44,7 +44,10 @@ class PlantCareCalendar(CalendarEntity):
                 subentry.subentry_id, cfg.moisture_sensor, cfg.moisture_threshold,
                 cfg.treatment_name, cfg.treatment_interval, cfg.treatment_until,
             )
-            for key, verb in ((CONF_NEXT_WATER, "Полив"), (CONF_NEXT_FEED, "Подкормка")):
+            pairs = [(CONF_NEXT_WATER, "Полив")]
+            if cfg.feeding_enabled:
+                pairs.append((CONF_NEXT_FEED, "Подкормка"))
+            for key, verb in pairs:
                 d: date = snap[key]
                 events.append(
                     CalendarEvent(
