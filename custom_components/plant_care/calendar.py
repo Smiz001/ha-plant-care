@@ -21,11 +21,20 @@ async def async_setup_entry(
 class PlantCareCalendar(CalendarEntity):
     _attr_has_entity_name = False
     _attr_name = "Plant Care"
+    _attr_should_poll = False
 
     def __init__(self, coordinator: PlantCareCoordinator, entry) -> None:
         self.coordinator = coordinator
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_calendar"
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        # Subscribe to coordinator updates so calendar events refresh promptly
+        # (value edits, mark-done, midnight refresh) instead of lagging ~60s.
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        )
 
     def _all_events(self) -> list[CalendarEvent]:
         events: list[CalendarEvent] = []

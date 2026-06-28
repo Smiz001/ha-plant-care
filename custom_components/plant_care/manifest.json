@@ -1,7 +1,7 @@
 {
   "domain": "plant_care",
   "name": "Plant Care",
-  "codeowners": [],
+  "codeowners": ["@Smiz001"],
   "config_flow": true,
   "documentation": "https://github.com/Smiz001/ha-plant-care",
   "iot_class": "calculated",
