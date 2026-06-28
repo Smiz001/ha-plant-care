@@ -22,7 +22,7 @@
   },
   "config_subentries": {
     "plant": {
-      "title": "Растение",
+      "entry_type": "Растение",
       "step": {
         "user": {
           "title": "Добавить растение",

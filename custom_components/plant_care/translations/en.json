@@ -22,7 +22,7 @@
   },
   "config_subentries": {
     "plant": {
-      "title": "Plant",
+      "entry_type": "Plant",
       "step": {
         "user": {
           "title": "Add plant",
