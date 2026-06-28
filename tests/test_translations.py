@@ -24,7 +24,7 @@ async def test_number_uses_translation_key(hass: HomeAssistant):
     assert entry_reg.name is None  # no per-entity name override
     # Name resolved from ru.json -> proves translation_key drives the name,
     # not a hard-coded English _attr_name ("Water interval").
-    assert entry_reg.original_name == "Интервал полива"
+    assert entry_reg.original_name == "Полив: интервал"
 
 
 async def test_sensor_uses_translation_key(hass: HomeAssistant):
@@ -36,4 +36,4 @@ async def test_sensor_uses_translation_key(hass: HomeAssistant):
     entry_reg = reg.async_get(ent_id)
     assert entry_reg.translation_key == "days_to_water"
     assert entry_reg.name is None
-    assert entry_reg.original_name == "Дней до полива"
+    assert entry_reg.original_name == "Полив: дней до"

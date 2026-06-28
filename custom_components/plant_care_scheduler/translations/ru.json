@@ -60,29 +60,29 @@
   },
   "entity": {
     "number": {
-      "water_interval": {"name": "Интервал полива"},
-      "feed_interval": {"name": "Интервал подкормки"}
+      "water_interval": {"name": "Полив: интервал"},
+      "feed_interval": {"name": "Подкормка: интервал"}
     },
     "date": {
-      "next_water": {"name": "Следующий полив"},
-      "next_feed": {"name": "Следующая подкормка"},
-      "next_treatment": {"name": "Следующая обработка"}
+      "next_water": {"name": "Полив: дата"},
+      "next_feed": {"name": "Подкормка: дата"},
+      "next_treatment": {"name": "Обработка: дата"}
     },
     "sensor": {
-      "days_to_water": {"name": "Дней до полива"},
-      "days_to_feed": {"name": "Дней до подкормки"},
-      "days_to_treatment": {"name": "Дней до обработки"},
-      "treatments_left": {"name": "Осталось обработок"}
+      "days_to_water": {"name": "Полив: дней до"},
+      "days_to_feed": {"name": "Подкормка: дней до"},
+      "days_to_treatment": {"name": "Обработка: дней до"},
+      "treatments_left": {"name": "Обработок осталось"}
     },
     "binary_sensor": {
-      "needs_water": {"name": "Требуется полив"},
-      "needs_feed": {"name": "Требуется подкормка"},
-      "needs_treatment": {"name": "Требуется обработка"}
+      "needs_water": {"name": "Полив: нужен"},
+      "needs_feed": {"name": "Подкормка: нужна"},
+      "needs_treatment": {"name": "Обработка: нужна"}
     },
     "button": {
-      "watered": {"name": "Отметить полив"},
-      "fed": {"name": "Отметить подкормку"},
-      "mark_treated": {"name": "Отметить обработку"}
+      "watered": {"name": "Полив: отметить"},
+      "fed": {"name": "Подкормка: отметить"},
+      "mark_treated": {"name": "Обработка: отметить"}
     }
   }
 }
