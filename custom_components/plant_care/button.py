@@ -15,20 +15,19 @@ async def async_setup_entry(
     for subentry in entry.subentries.values():
         async_add_entities(
             [
-                PlantActionButton(coordinator, subentry, "water", "watered", "Mark watered"),
-                PlantActionButton(coordinator, subentry, "feed", "fed", "Mark fed"),
+                PlantActionButton(coordinator, subentry, "water", "watered"),
+                PlantActionButton(coordinator, subentry, "feed", "fed"),
             ],
             config_subentry_id=subentry.subentry_id,
         )
 
 
 class PlantActionButton(PlantCareEntity, ButtonEntity):
-    def __init__(self, coordinator, subentry, task, slug, label):
+    def __init__(self, coordinator, subentry, task, slug):
         super().__init__(coordinator, subentry)
         self._task = task
         self._attr_translation_key = slug
         self._attr_unique_id = f"{subentry.subentry_id}_{slug}"
-        self._attr_name = label
 
     async def async_press(self) -> None:
         await self.coordinator.async_mark_done(self._subentry_id, self._task)

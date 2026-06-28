@@ -19,8 +19,8 @@ async def async_setup_entry(
     for subentry in entry.subentries.values():
         async_add_entities(
             [
-                PlantNeedsBinary(coordinator, subentry, "needs_water", "Needs watering"),
-                PlantNeedsBinary(coordinator, subentry, "needs_feed", "Needs feeding"),
+                PlantNeedsBinary(coordinator, subentry, "needs_water"),
+                PlantNeedsBinary(coordinator, subentry, "needs_feed"),
             ],
             config_subentry_id=subentry.subentry_id,
         )
@@ -29,12 +29,11 @@ async def async_setup_entry(
 class PlantNeedsBinary(PlantCareEntity, BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
 
-    def __init__(self, coordinator, subentry, key, label):
+    def __init__(self, coordinator, subentry, key):
         super().__init__(coordinator, subentry)
         self._key = key
         self._attr_translation_key = key
         self._attr_unique_id = f"{subentry.subentry_id}_{key}"
-        self._attr_name = label
 
     @property
     def is_on(self) -> bool:

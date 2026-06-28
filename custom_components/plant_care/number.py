@@ -16,8 +16,8 @@ async def async_setup_entry(
     for subentry in entry.subentries.values():
         async_add_entities(
             [
-                PlantIntervalNumber(coordinator, subentry, CONF_WATER_INTERVAL, "water_interval", "Water interval"),
-                PlantIntervalNumber(coordinator, subentry, CONF_FEED_INTERVAL, "feed_interval", "Feed interval"),
+                PlantIntervalNumber(coordinator, subentry, CONF_WATER_INTERVAL, "water_interval"),
+                PlantIntervalNumber(coordinator, subentry, CONF_FEED_INTERVAL, "feed_interval"),
             ],
             config_subentry_id=subentry.subentry_id,
         )
@@ -30,12 +30,11 @@ class PlantIntervalNumber(PlantCareEntity, NumberEntity):
     _attr_mode = NumberMode.BOX
     _attr_native_unit_of_measurement = "d"
 
-    def __init__(self, coordinator, subentry, key, slug, label):
+    def __init__(self, coordinator, subentry, key, slug):
         super().__init__(coordinator, subentry)
         self._key = key
         self._attr_translation_key = slug
         self._attr_unique_id = f"{subentry.subentry_id}_{slug}"
-        self._attr_name = label
 
     @property
     def native_value(self) -> float:

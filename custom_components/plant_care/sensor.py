@@ -15,8 +15,8 @@ async def async_setup_entry(
     for subentry in entry.subentries.values():
         async_add_entities(
             [
-                PlantDaysSensor(coordinator, subentry, "days_to_water", "Days to watering"),
-                PlantDaysSensor(coordinator, subentry, "days_to_feed", "Days to feeding"),
+                PlantDaysSensor(coordinator, subentry, "days_to_water"),
+                PlantDaysSensor(coordinator, subentry, "days_to_feed"),
             ],
             config_subentry_id=subentry.subentry_id,
         )
@@ -25,12 +25,11 @@ async def async_setup_entry(
 class PlantDaysSensor(PlantCareEntity, SensorEntity):
     _attr_native_unit_of_measurement = "d"
 
-    def __init__(self, coordinator, subentry, key, label):
+    def __init__(self, coordinator, subentry, key):
         super().__init__(coordinator, subentry)
         self._key = key
         self._attr_translation_key = key
         self._attr_unique_id = f"{subentry.subentry_id}_{key}"
-        self._attr_name = label
 
     @property
     def native_value(self) -> int:

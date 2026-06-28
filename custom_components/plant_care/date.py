@@ -18,20 +18,19 @@ async def async_setup_entry(
     for subentry in entry.subentries.values():
         async_add_entities(
             [
-                PlantDate(coordinator, subentry, CONF_NEXT_WATER, "next_water", "Next watering"),
-                PlantDate(coordinator, subentry, CONF_NEXT_FEED, "next_feed", "Next feeding"),
+                PlantDate(coordinator, subentry, CONF_NEXT_WATER, "next_water"),
+                PlantDate(coordinator, subentry, CONF_NEXT_FEED, "next_feed"),
             ],
             config_subentry_id=subentry.subentry_id,
         )
 
 
 class PlantDate(PlantCareEntity, DateEntity):
-    def __init__(self, coordinator, subentry, key, slug, label):
+    def __init__(self, coordinator, subentry, key, slug):
         super().__init__(coordinator, subentry)
         self._key = key
         self._attr_translation_key = slug
         self._attr_unique_id = f"{subentry.subentry_id}_{slug}"
-        self._attr_name = label
 
     @property
     def native_value(self) -> date:
