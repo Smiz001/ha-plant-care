@@ -12,15 +12,20 @@ from .entity import PlantCareEntity
 async def async_setup_entry(
     hass: HomeAssistant, entry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
+    from .models import PlantConfig
+
     coordinator = entry.runtime_data
     for subentry in entry.subentries.values():
+        cfg = PlantConfig.from_data(dict(subentry.data))
         async_add_entities(
-            [
-                PlantIntervalNumber(coordinator, subentry, CONF_WATER_INTERVAL, "water_interval"),
-                PlantIntervalNumber(coordinator, subentry, CONF_FEED_INTERVAL, "feed_interval"),
-            ],
+            [PlantIntervalNumber(coordinator, subentry, CONF_WATER_INTERVAL, "water_interval")],
             config_subentry_id=subentry.subentry_id,
         )
+        if cfg.feeding_enabled:
+            async_add_entities(
+                [PlantIntervalNumber(coordinator, subentry, CONF_FEED_INTERVAL, "feed_interval")],
+                config_subentry_id=subentry.subentry_id,
+            )
 
 
 class PlantIntervalNumber(PlantCareEntity, NumberEntity):

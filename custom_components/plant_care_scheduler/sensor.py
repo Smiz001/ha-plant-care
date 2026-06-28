@@ -15,14 +15,17 @@ async def async_setup_entry(
 
     coordinator = entry.runtime_data
     for subentry in entry.subentries.values():
+        cfg = PlantConfig.from_data(dict(subentry.data))
         async_add_entities(
-            [
-                PlantDaysSensor(coordinator, subentry, "days_to_water"),
-                PlantDaysSensor(coordinator, subentry, "days_to_feed"),
-            ],
+            [PlantDaysSensor(coordinator, subentry, "days_to_water")],
             config_subentry_id=subentry.subentry_id,
         )
-        if PlantConfig.from_data(dict(subentry.data)).has_treatment:
+        if cfg.feeding_enabled:
+            async_add_entities(
+                [PlantDaysSensor(coordinator, subentry, "days_to_feed")],
+                config_subentry_id=subentry.subentry_id,
+            )
+        if cfg.has_treatment:
             async_add_entities(
                 [
                     PlantDaysSensor(coordinator, subentry, "days_to_treatment"),

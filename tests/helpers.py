@@ -6,10 +6,10 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant_care_scheduler.const import (
-    CONF_EMOJI, CONF_FEED_INTERVAL, CONF_MOISTURE_SENSOR, CONF_MOISTURE_THRESHOLD,
-    CONF_NAME, CONF_NEXT_FEED, CONF_NEXT_WATER, CONF_SCHEMA_VERSION,
-    CONF_TREATMENT_INTERVAL, CONF_TREATMENT_NAME, CONF_TREATMENT_UNTIL,
-    CONF_WATER_INTERVAL, DOMAIN, SUBENTRY_TYPE,
+    CONF_EMOJI, CONF_FEED_INTERVAL, CONF_FEEDING_ENABLED, CONF_MOISTURE_SENSOR,
+    CONF_MOISTURE_THRESHOLD, CONF_NAME, CONF_NEXT_FEED, CONF_NEXT_WATER,
+    CONF_SCHEMA_VERSION, CONF_TREATMENT_INTERVAL, CONF_TREATMENT_NAME,
+    CONF_TREATMENT_UNTIL, CONF_WATER_INTERVAL, DOMAIN, SUBENTRY_TYPE,
 )
 
 
@@ -22,6 +22,7 @@ async def setup_one_plant(
     next_feed: str = "2026-07-06",
     moisture_sensor: str | None = None,
     moisture_threshold: float | None = None,
+    feeding_enabled: bool | None = None,
     options: dict | None = None,
 ):
     """Set up the hub with exactly one plant subentry; return (entry, subentry_id)."""
@@ -36,6 +37,10 @@ async def setup_one_plant(
         CONF_MOISTURE_THRESHOLD: moisture_threshold,
         CONF_SCHEMA_VERSION: 1,
     }
+    # Only set the key when explicitly given so the default path omits it
+    # entirely — exactly the v0.3.x on-disk shape (backward-compat).
+    if feeding_enabled is not None:
+        data[CONF_FEEDING_ENABLED] = feeding_enabled
     sub = ConfigSubentryData(
         data=data, subentry_type=SUBENTRY_TYPE, title="Жасмин", unique_id=None
     )

@@ -19,14 +19,17 @@ async def async_setup_entry(
 
     coordinator = entry.runtime_data
     for subentry in entry.subentries.values():
+        cfg = PlantConfig.from_data(dict(subentry.data))
         async_add_entities(
-            [
-                PlantNeedsBinary(coordinator, subentry, "needs_water"),
-                PlantNeedsBinary(coordinator, subentry, "needs_feed"),
-            ],
+            [PlantNeedsBinary(coordinator, subentry, "needs_water")],
             config_subentry_id=subentry.subentry_id,
         )
-        if PlantConfig.from_data(dict(subentry.data)).has_treatment:
+        if cfg.feeding_enabled:
+            async_add_entities(
+                [PlantNeedsBinary(coordinator, subentry, "needs_feed")],
+                config_subentry_id=subentry.subentry_id,
+            )
+        if cfg.has_treatment:
             async_add_entities(
                 [PlantNeedsBinary(coordinator, subentry, "needs_treatment")],
                 config_subentry_id=subentry.subentry_id,
