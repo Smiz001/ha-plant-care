@@ -1,4 +1,6 @@
 """Tests for the plant subentry reconfigure flow."""
+from datetime import date
+
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
@@ -93,3 +95,48 @@ async def test_reconfigure_starts_and_stops_treatment(hass):
     await hass.async_block_till_done()
     sub = hass.config_entries.async_get_entry(entry.entry_id).subentries[sid]
     assert not sub.data.get(CONF_TREATMENT_NAME)
+
+
+async def test_reconfigure_edit_preserves_active_treatment_schedule(hass):
+    # Editing an unrelated field (emoji) on an active-treatment plant must NOT
+    # restart the in-progress course: next_treatment/treatments_left live in the
+    # Store and the form submits them blank, so the handler must preserve them.
+    from tests.helpers import setup_one_plant
+    from custom_components.plant_care_scheduler.const import (
+        CONF_NAME, CONF_EMOJI, CONF_TREATMENT_NAME, CONF_TREATMENT_INTERVAL,
+        CONF_NEXT_TREATMENT, CONF_TREATMENTS_LEFT,
+    )
+    entry, sid = await setup_one_plant(hass)
+    # 1. Start a treatment course via reconfigure.
+    r = await hass.config_entries.subentries.async_init((entry.entry_id, "plant"),
+        context={"source": "reconfigure", "subentry_id": sid})
+    r = await hass.config_entries.subentries.async_configure(r["flow_id"], {
+        CONF_NAME: "Жасмин", CONF_EMOJI: "🌼",
+        CONF_TREATMENT_NAME: "Фунгицид", CONF_TREATMENT_INTERVAL: 3,
+        CONF_NEXT_TREATMENT: "2026-07-01", CONF_TREATMENTS_LEFT: 4,
+    })
+    assert r["type"].value == "abort" and r["reason"] == "reconfigure_successful"
+    await hass.async_block_till_done()
+    entry = hass.config_entries.async_get_entry(entry.entry_id)
+    # 2. Store now holds the started course.
+    snap = entry.runtime_data.snapshot(sid, None, None)
+    assert snap["next_treatment"] == date(2026, 7, 1)
+    assert snap["treatments_left"] == 4
+
+    # 3. Reconfigure AGAIN: change only emoji, keep name/interval (they pre-fill
+    #    from subentry.data), but OMIT next_treatment/treatments_left (the
+    #    Store-backed fields the form submits blank).
+    r = await hass.config_entries.subentries.async_init((entry.entry_id, "plant"),
+        context={"source": "reconfigure", "subentry_id": sid})
+    r = await hass.config_entries.subentries.async_configure(r["flow_id"], {
+        CONF_NAME: "Жасмин", CONF_EMOJI: "🍓",
+        CONF_TREATMENT_NAME: "Фунгицид", CONF_TREATMENT_INTERVAL: 3,
+    })
+    assert r["type"].value == "abort" and r["reason"] == "reconfigure_successful"
+    await hass.async_block_till_done()
+    entry = hass.config_entries.async_get_entry(entry.entry_id)
+
+    # 4. The in-progress schedule must be untouched (NOT today / None).
+    snap = entry.runtime_data.snapshot(sid, None, None)
+    assert snap["next_treatment"] == date(2026, 7, 1)
+    assert snap["treatments_left"] == 4

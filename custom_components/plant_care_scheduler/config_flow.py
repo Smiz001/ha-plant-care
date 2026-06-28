@@ -214,12 +214,18 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 new_data[CONF_TREATMENT_UNTIL] = (
                     user_input.get(CONF_TREATMENT_UNTIL) or None
                 )
+                # next_treatment/treatments_left live in the Store, not in
+                # subentry.data, so the form can't pre-fill them and submits them
+                # blank on a plain re-save. Read the current Store values and use
+                # them as defaults so editing an active course (rename, attach
+                # sensor, ...) doesn't silently restart its schedule.
+                snap = coord.snapshot(subentry.subentry_id, None, None)
                 nt = user_input.get(CONF_NEXT_TREATMENT)
                 left = user_input.get(CONF_TREATMENTS_LEFT)
                 await coord.async_set_treatment(
                     subentry.subentry_id,
-                    date.fromisoformat(nt) if nt else dt_util.now().date(),
-                    int(left) if left is not None else None,
+                    date.fromisoformat(nt) if nt else (snap["next_treatment"] or dt_util.now().date()),
+                    int(left) if left is not None else snap["treatments_left"],
                 )
             else:
                 for k in (
