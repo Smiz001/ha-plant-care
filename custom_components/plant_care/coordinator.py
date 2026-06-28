@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from datetime import date
 
 from homeassistant.config_entries import ConfigEntry
@@ -15,6 +16,8 @@ from .const import (
     CONF_NEXT_FEED,
     CONF_NEXT_WATER,
     CONF_WATER_INTERVAL,
+    DEFAULT_FEED_INTERVAL,
+    DEFAULT_WATER_INTERVAL,
     DOMAIN,
     STORAGE_VERSION,
 )
@@ -40,7 +43,9 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         self._live: dict[str, dict] = {}
         self._warned_corrupt: set[str] = set()
 
-    def _parse_or_today(self, live: dict, key: str, today: date) -> date:
+    def _parse_or_today(
+        self, subentry_id: str, live: dict, key: str, today: date
+    ) -> date:
         """Parse a stored ISO date; fall back to today if corrupt/missing.
 
         A bad value would otherwise raise and break all of the plant's
@@ -50,7 +55,8 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         try:
             return _parse(live[key])
         except (KeyError, ValueError, TypeError):
-            warn_key = f"{id(live)}:{key}"
+            # Key on the stable subentry_id, not id(live) (reused after GC).
+            warn_key = f"{subentry_id}:{key}"
             if warn_key not in self._warned_corrupt:
                 self._warned_corrupt.add(warn_key)
                 _LOGGER.warning(
@@ -99,6 +105,10 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         for sid in list(self._live):
             if sid not in valid_ids:
                 del self._live[sid]
+        # Drop corrupt-warning keys for removed plants so the set stays bounded.
+        self._warned_corrupt = {
+            k for k in self._warned_corrupt if k.split(":", 1)[0] in valid_ids
+        }
 
     def _moisture(self, entity_id: str | None) -> float | None:
         if not entity_id:
@@ -107,9 +117,12 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         if state is None or state.state in ("unknown", "unavailable", ""):
             return None
         try:
-            return float(state.state)
+            val = float(state.state)
         except (TypeError, ValueError):
             return None
+        # NaN/inf parse fine but are not usable readings; treat as unknown so
+        # comparisons (val < threshold) don't silently report "not due".
+        return val if math.isfinite(val) else None
 
     @callback
     def snapshot(
@@ -120,8 +133,8 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
     ) -> dict:
         live = self._plant(subentry_id)
         today = dt_util.now().date()
-        next_water = self._parse_or_today(live, CONF_NEXT_WATER, today)
-        next_feed = self._parse_or_today(live, CONF_NEXT_FEED, today)
+        next_water = self._parse_or_today(subentry_id, live, CONF_NEXT_WATER, today)
+        next_feed = self._parse_or_today(subentry_id, live, CONF_NEXT_FEED, today)
         moisture = self._moisture(cfg_moisture_sensor)
         # Only trust the moisture reading when it is actually known. If the
         # sensor is unavailable/unknown/non-numeric, fall back to the calendar
@@ -135,8 +148,10 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         else:
             needs_water = is_calendar_due(next_water, today)
         return {
-            CONF_WATER_INTERVAL: live[CONF_WATER_INTERVAL],
-            CONF_FEED_INTERVAL: live[CONF_FEED_INTERVAL],
+            # Default missing interval keys: a partial/older Store must not
+            # KeyError and break every entity for this plant.
+            CONF_WATER_INTERVAL: live.get(CONF_WATER_INTERVAL, DEFAULT_WATER_INTERVAL),
+            CONF_FEED_INTERVAL: live.get(CONF_FEED_INTERVAL, DEFAULT_FEED_INTERVAL),
             CONF_NEXT_WATER: next_water,
             CONF_NEXT_FEED: next_feed,
             "days_to_water": days_until(next_water, today),
