@@ -19,6 +19,7 @@ from .const import (
     CONF_TREATMENTS_LEFT,
     CONF_WATER_INTERVAL,
     DEFAULT_FEED_INTERVAL,
+    DEFAULT_TREATMENT_INTERVAL,
     DEFAULT_WATER_INTERVAL,
     DOMAIN,
     STORAGE_VERSION,
@@ -217,7 +218,7 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         await self._save()
         self.async_update_listeners()
 
-    async def async_set_treatment(self, subentry_id: str, next_treatment: date, treatments_left: int) -> None:
+    async def async_set_treatment(self, subentry_id: str, next_treatment: date, treatments_left: int | None) -> None:
         p = self._plant(subentry_id)
         p[CONF_NEXT_TREATMENT] = next_treatment.isoformat()
         p[CONF_TREATMENTS_LEFT] = treatments_left
@@ -231,11 +232,12 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         await self._save()
         self.async_update_listeners()
 
-    async def async_mark_treated(self, subentry_id: str, interval: int) -> None:
+    async def async_mark_treated(self, subentry_id: str, interval: int | None) -> None:
         p = self._plant(subentry_id)
         today = dt_util.now().date()
+        interval = int(interval) if interval is not None else DEFAULT_TREATMENT_INTERVAL
         if p.get(CONF_TREATMENTS_LEFT) is not None:
             p[CONF_TREATMENTS_LEFT] = int(p[CONF_TREATMENTS_LEFT]) - 1
-        p[CONF_NEXT_TREATMENT] = (today + timedelta(days=int(interval))).isoformat()
+        p[CONF_NEXT_TREATMENT] = (today + timedelta(days=interval)).isoformat()
         await self._save()
         self.async_update_listeners()

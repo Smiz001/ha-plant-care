@@ -1,10 +1,14 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.plant_care_scheduler.const import DEFAULT_WATER_INTERVAL, DOMAIN
+from custom_components.plant_care_scheduler.const import (
+    DEFAULT_TREATMENT_INTERVAL,
+    DEFAULT_WATER_INTERVAL,
+    DOMAIN,
+)
 from custom_components.plant_care_scheduler.coordinator import PlantCareCoordinator
 
 
@@ -116,6 +120,21 @@ async def test_snapshot_survives_corrupt_treatment_date(hass, entry, freezer):
     assert snap["next_treatment"] == date(2026, 6, 28)  # corrupt -> today fallback
     assert snap["treatment_active"] is True
     assert snap["next_water"] == date(2026, 6, 30)  # other dates untouched
+
+
+async def test_mark_treated_with_none_interval_does_not_crash(hass, entry, freezer):
+    # A corrupt/absent treatment_interval (None) must not crash a button press;
+    # fall back to the default interval.
+    freezer.move_to("2026-06-28 08:00:00")
+    coord = PlantCareCoordinator(hass, entry)
+    await coord.async_load()
+    coord.ensure_seed("sub1", 5, 14, date(2026, 6, 30), date(2026, 7, 6))
+    await coord.async_set_treatment("sub1", date(2026, 6, 28), None)  # open-ended
+
+    await coord.async_mark_treated("sub1", None)  # must not raise
+
+    snap = coord.snapshot("sub1", None, None, "Фунгицид", None, None)
+    assert snap["next_treatment"] == date(2026, 6, 28) + timedelta(days=DEFAULT_TREATMENT_INTERVAL)
 
 
 async def test_treatment_snapshot_and_mark(hass, entry, freezer):
