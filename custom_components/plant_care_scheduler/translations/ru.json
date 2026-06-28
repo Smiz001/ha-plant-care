@@ -44,7 +44,12 @@
             "name": "Название",
             "emoji": "Эмодзи",
             "moisture_sensor": "Датчик влажности почвы (опционально)",
-            "moisture_threshold": "Порог влажности (%)"
+            "moisture_threshold": "Порог влажности (%)",
+            "treatment_name": "Название лечения (пусто = без лечения)",
+            "treatment_interval": "Интервал обработки (дни)",
+            "next_treatment": "Следующая обработка",
+            "treatments_left": "Осталось обработок (раз)",
+            "treatment_until": "Лечить до (дата)"
           }
         }
       },
@@ -60,19 +65,24 @@
     },
     "date": {
       "next_water": {"name": "Следующий полив"},
-      "next_feed": {"name": "Следующая подкормка"}
+      "next_feed": {"name": "Следующая подкормка"},
+      "next_treatment": {"name": "Следующая обработка"}
     },
     "sensor": {
       "days_to_water": {"name": "Дней до полива"},
-      "days_to_feed": {"name": "Дней до подкормки"}
+      "days_to_feed": {"name": "Дней до подкормки"},
+      "days_to_treatment": {"name": "Дней до обработки"},
+      "treatments_left": {"name": "Осталось обработок"}
     },
     "binary_sensor": {
       "needs_water": {"name": "Требуется полив"},
-      "needs_feed": {"name": "Требуется подкормка"}
+      "needs_feed": {"name": "Требуется подкормка"},
+      "needs_treatment": {"name": "Требуется обработка"}
     },
     "button": {
       "watered": {"name": "Отметить полив"},
-      "fed": {"name": "Отметить подкормку"}
+      "fed": {"name": "Отметить подкормку"},
+      "mark_treated": {"name": "Отметить обработку"}
     }
   }
 }

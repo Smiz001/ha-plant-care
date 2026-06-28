@@ -44,7 +44,12 @@
             "name": "Name",
             "emoji": "Emoji",
             "moisture_sensor": "Soil moisture sensor (optional)",
-            "moisture_threshold": "Moisture threshold (%)"
+            "moisture_threshold": "Moisture threshold (%)",
+            "treatment_name": "Treatment name (empty = no treatment)",
+            "treatment_interval": "Treatment interval (days)",
+            "next_treatment": "Next treatment",
+            "treatments_left": "Treatments left (count)",
+            "treatment_until": "Treat until (date)"
           }
         }
       },
@@ -60,19 +65,24 @@
     },
     "date": {
       "next_water": {"name": "Next watering"},
-      "next_feed": {"name": "Next feeding"}
+      "next_feed": {"name": "Next feeding"},
+      "next_treatment": {"name": "Next treatment"}
     },
     "sensor": {
       "days_to_water": {"name": "Days to watering"},
-      "days_to_feed": {"name": "Days to feeding"}
+      "days_to_feed": {"name": "Days to feeding"},
+      "days_to_treatment": {"name": "Days to treatment"},
+      "treatments_left": {"name": "Treatments left"}
     },
     "binary_sensor": {
       "needs_water": {"name": "Needs watering"},
-      "needs_feed": {"name": "Needs feeding"}
+      "needs_feed": {"name": "Needs feeding"},
+      "needs_treatment": {"name": "Needs treatment"}
     },
     "button": {
       "watered": {"name": "Mark watered"},
-      "fed": {"name": "Mark fed"}
+      "fed": {"name": "Mark fed"},
+      "mark_treated": {"name": "Mark treated"}
     }
   }
 }
