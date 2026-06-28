@@ -1,10 +1,21 @@
 """The Plant Care integration."""
 from __future__ import annotations
 
+from datetime import date as date_cls, timedelta
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 
-from .const import PLATFORMS
+from .const import (
+    CONF_FEED_INTERVAL,
+    CONF_NEXT_FEED,
+    CONF_NEXT_WATER,
+    CONF_WATER_INTERVAL,
+    DEFAULT_FEED_INTERVAL,
+    DEFAULT_WATER_INTERVAL,
+    PLATFORMS,
+)
 from .coordinator import PlantCareCoordinator
 
 type PlantCareConfigEntry = ConfigEntry[PlantCareCoordinator]
@@ -15,6 +26,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: PlantCareConfigEntry) ->
     coordinator = PlantCareCoordinator(hass, entry)
     await coordinator.async_load()
     entry.runtime_data = coordinator
+
+    # Seed live values for every plant subentry (idempotent: only on first add).
+    today = dt_util.now().date()
+    for subentry in entry.subentries.values():
+        data = subentry.data
+        try:
+            nw = date_cls.fromisoformat(data[CONF_NEXT_WATER])
+            nf = date_cls.fromisoformat(data[CONF_NEXT_FEED])
+            wi = int(data[CONF_WATER_INTERVAL])
+            fi = int(data[CONF_FEED_INTERVAL])
+        except (KeyError, ValueError, TypeError):
+            wi, fi = DEFAULT_WATER_INTERVAL, DEFAULT_FEED_INTERVAL
+            nw, nf = today + timedelta(days=wi), today + timedelta(days=fi)
+        coordinator.ensure_seed(subentry.subentry_id, wi, fi, nw, nf)
+    coordinator.prune(set(entry.subentries))
+    await coordinator._save()
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
