@@ -26,6 +26,28 @@ async def test_needs_water_moisture(hass: HomeAssistant, freezer):
     assert hass.states.get(ent).state == "on"
 
 
+async def test_needs_water_updates_when_sensor_appears(hass: HomeAssistant, freezer):
+    # Moisture sensor + threshold configured but the sensor doesn't exist yet,
+    # and the calendar is NOT due -> off. When the sensor appears below the
+    # threshold, the binary must flip on without a reload.
+    freezer.move_to("2026-06-28 08:00:00")  # next_water 06-30 -> calendar not due
+    entry, sid = await setup_one_plant(
+        hass,
+        moisture_sensor="sensor.test_moist",  # state not set yet
+        moisture_threshold=35,
+        next_water="2026-06-30",
+    )
+    reg = er.async_get(hass)
+    ent = reg.async_get_entity_id("binary_sensor", "plant_care", f"{sid}_needs_water")
+    assert ent is not None
+    assert hass.states.get(ent).state == "off"  # sensor absent, calendar not due
+
+    hass.states.async_set("sensor.test_moist", "20")  # below threshold
+    await hass.async_block_till_done()
+
+    assert hass.states.get(ent).state == "on"  # moisture now drives "due"
+
+
 async def test_needs_water_moisture_unavailable_falls_back_to_calendar(
     hass: HomeAssistant, freezer
 ):

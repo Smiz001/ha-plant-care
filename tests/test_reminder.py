@@ -51,6 +51,29 @@ async def test_reminder_invalid_target_no_call(hass: HomeAssistant, freezer):
     assert call.await_count == 0
 
 
+async def test_both_due_two_messages(hass: HomeAssistant, freezer):
+    # When both watering and feeding are overdue, the plant produces two
+    # separate notifications (water + feed) with the right wording.
+    freezer.move_to("2026-07-10 09:00:00")  # past both next_water and next_feed
+    entry, sid = await setup_one_plant(
+        hass,
+        next_water="2026-06-30",
+        next_feed="2026-07-06",
+        options={CONF_NOTIFY_TARGET: "notify.mock"},
+    )
+    hass.services.async_register("notify", "mock", lambda call: None)
+
+    with patch(
+        "homeassistant.core.ServiceRegistry.async_call", new_callable=AsyncMock
+    ) as call:
+        await async_send_due_reminders(hass, entry)
+
+    assert call.await_count == 2
+    messages = [c.args[2]["message"] for c in call.await_args_list]
+    assert any("полить" in m for m in messages)  # водой / watering
+    assert any("подкормить" in m for m in messages)  # подкормка / feeding
+
+
 async def test_reminder_unregistered_service_no_call(hass: HomeAssistant, freezer):
     # A well-formed target whose notify service is not registered must short
     # out with a single warning, not spam a traceback per due plant per day.
