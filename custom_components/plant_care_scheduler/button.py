@@ -11,6 +11,8 @@ from .entity import PlantCareEntity
 async def async_setup_entry(
     hass: HomeAssistant, entry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
+    from .models import PlantConfig
+
     coordinator = entry.runtime_data
     for subentry in entry.subentries.values():
         async_add_entities(
@@ -20,6 +22,11 @@ async def async_setup_entry(
             ],
             config_subentry_id=subentry.subentry_id,
         )
+        if PlantConfig.from_data(dict(subentry.data)).has_treatment:
+            async_add_entities(
+                [PlantTreatmentButton(coordinator, subentry)],
+                config_subentry_id=subentry.subentry_id,
+            )
 
 
 class PlantActionButton(PlantCareEntity, ButtonEntity):
@@ -31,3 +38,14 @@ class PlantActionButton(PlantCareEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self.coordinator.async_mark_done(self._subentry_id, self._task)
+
+
+class PlantTreatmentButton(PlantCareEntity, ButtonEntity):
+    _attr_translation_key = "mark_treated"
+
+    def __init__(self, coordinator, subentry):
+        super().__init__(coordinator, subentry)
+        self._attr_unique_id = f"{subentry.subentry_id}_mark_treated"
+
+    async def async_press(self) -> None:
+        await self.coordinator.async_mark_treated(self._subentry_id, self._cfg.treatment_interval)

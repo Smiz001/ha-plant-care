@@ -15,6 +15,8 @@ from .entity import PlantCareEntity
 async def async_setup_entry(
     hass: HomeAssistant, entry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
+    from .models import PlantConfig
+
     coordinator = entry.runtime_data
     for subentry in entry.subentries.values():
         async_add_entities(
@@ -24,6 +26,11 @@ async def async_setup_entry(
             ],
             config_subentry_id=subentry.subentry_id,
         )
+        if PlantConfig.from_data(dict(subentry.data)).has_treatment:
+            async_add_entities(
+                [PlantNeedsBinary(coordinator, subentry, "needs_treatment")],
+                config_subentry_id=subentry.subentry_id,
+            )
 
 
 class PlantNeedsBinary(PlantCareEntity, BinarySensorEntity):

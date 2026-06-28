@@ -7,13 +7,15 @@ from homeassistant.components.date import DateEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import CONF_NEXT_FEED, CONF_NEXT_WATER
+from .const import CONF_NEXT_FEED, CONF_NEXT_TREATMENT, CONF_NEXT_WATER
 from .entity import PlantCareEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
+    from .models import PlantConfig
+
     coordinator = entry.runtime_data
     for subentry in entry.subentries.values():
         async_add_entities(
@@ -23,6 +25,11 @@ async def async_setup_entry(
             ],
             config_subentry_id=subentry.subentry_id,
         )
+        if PlantConfig.from_data(dict(subentry.data)).has_treatment:
+            async_add_entities(
+                [PlantDate(coordinator, subentry, CONF_NEXT_TREATMENT, "next_treatment")],
+                config_subentry_id=subentry.subentry_id,
+            )
 
 
 class PlantDate(PlantCareEntity, DateEntity):
