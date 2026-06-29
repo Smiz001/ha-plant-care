@@ -171,7 +171,6 @@ async def _tg_handle(hass, coordinator, opts, ns, data) -> None:
             and hass.services.has_service("telegram_bot", "edit_message")
         ):
             await hass.services.async_call("telegram_bot", "edit_message", {
-                "type": "text",
                 "config_entry_id": cfg_entry,
                 "message_id": message_id,
                 "chat_id": chat_id,
