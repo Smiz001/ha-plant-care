@@ -33,7 +33,6 @@ CONF_NEXT_FEED = "next_feed"
 
 # hub options
 CONF_REMINDER_TIME = "reminder_time"
-CONF_NOTIFY_TARGET = "notify_target"
 
 DEFAULT_EMOJI = "🌱"
 DEFAULT_REMINDER_TIME = "09:00:00"

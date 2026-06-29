@@ -18,18 +18,24 @@ from homeassistant.helpers import entity_registry as er, selector
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CHANNEL_MOBILE_APP,
+    CHANNEL_TELEGRAM,
     CONF_EMOJI,
     CONF_FEED_INTERVAL,
     CONF_FEEDING_ENABLED,
+    CONF_MOBILE_APP_SERVICE,
     CONF_MOISTURE_SENSOR,
     CONF_MOISTURE_THRESHOLD,
     CONF_NAME,
     CONF_NEXT_FEED,
     CONF_NEXT_TREATMENT,
     CONF_NEXT_WATER,
-    CONF_NOTIFY_TARGET,
+    CONF_NOTIFICATIONS_ENABLED,
+    CONF_NOTIFY_CHANNEL,
     CONF_REMINDER_TIME,
     CONF_SCHEMA_VERSION,
+    CONF_TELEGRAM_CHAT_ID,
+    CONF_TELEGRAM_CONFIG_ENTRY,
     CONF_TREATMENT_INTERVAL,
     CONF_TREATMENT_NAME,
     CONF_TREATMENT_UNTIL,
@@ -178,7 +184,7 @@ class PlantCareConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class PlantCareOptionsFlow(OptionsFlow):
-    """Hub-wide options: reminder time + optional notify target."""
+    """Hub-wide options: reminder time + built-in notification settings."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -194,8 +200,36 @@ class PlantCareOptionsFlow(OptionsFlow):
                     default=opts.get(CONF_REMINDER_TIME, DEFAULT_REMINDER_TIME),
                 ): selector.TimeSelector(),
                 vol.Optional(
-                    CONF_NOTIFY_TARGET,
-                    default=opts.get(CONF_NOTIFY_TARGET, ""),
+                    CONF_NOTIFICATIONS_ENABLED,
+                    default=opts.get(CONF_NOTIFICATIONS_ENABLED, False),
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_NOTIFY_CHANNEL,
+                    default=opts.get(CONF_NOTIFY_CHANNEL, CHANNEL_TELEGRAM),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(
+                                value=CHANNEL_TELEGRAM, label="Telegram"
+                            ),
+                            selector.SelectOptionDict(
+                                value=CHANNEL_MOBILE_APP, label="Mobile app"
+                            ),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(
+                    CONF_TELEGRAM_CONFIG_ENTRY,
+                    default=opts.get(CONF_TELEGRAM_CONFIG_ENTRY, ""),
+                ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_TELEGRAM_CHAT_ID,
+                    default=opts.get(CONF_TELEGRAM_CHAT_ID, ""),
+                ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_MOBILE_APP_SERVICE,
+                    default=opts.get(CONF_MOBILE_APP_SERVICE, ""),
                 ): selector.TextSelector(),
             }
         )

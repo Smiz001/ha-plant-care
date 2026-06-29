@@ -15,7 +15,11 @@
       "init": {
         "data": {
           "reminder_time": "Время напоминаний",
-          "notify_target": "Сервис уведомлений (например, notify.telegram)"
+          "notifications_enabled": "Встроенные напоминания",
+          "notify_channel": "Канал напоминаний",
+          "telegram_config_entry_id": "Telegram: id конфиг-записи бота",
+          "telegram_chat_id": "Telegram: chat id",
+          "mobile_app_service": "Сервис mobile_app (напр. notify.mobile_app_phone)"
         }
       }
     }
