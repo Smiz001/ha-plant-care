@@ -22,7 +22,11 @@ async def test_daily_trigger_sends_when_enabled(hass: HomeAssistant, freezer):
     })
     freezer.move_to("2026-06-28 08:30:01")
     async_fire_time_changed(hass, dt_util.now())
-    await hass.async_block_till_done()
+    # The daily time-change job is an async callback; HA runs it via
+    # async_run_hass_job(..., background=True), so it lands as a *background*
+    # task. A plain async_block_till_done() isn't guaranteed to await those on
+    # newer HA — wait_background_tasks=True is required for cross-version reliability.
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert len(calls) == 1
 
 
@@ -36,5 +40,5 @@ async def test_no_trigger_when_disabled(hass: HomeAssistant, freezer):
     })
     freezer.move_to("2026-06-28 08:30:01")
     async_fire_time_changed(hass, dt_util.now())
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert calls == []
