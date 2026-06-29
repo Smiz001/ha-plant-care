@@ -3,6 +3,10 @@ from __future__ import annotations
 
 import logging
 
+from homeassistant.core import callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.event import async_track_state_change_event
+
 from .const import (
     CONF_NOTIFY_CHANNEL, CONF_TELEGRAM_CONFIG_ENTRY, CONF_TELEGRAM_CHAT_ID,
     CONF_MOBILE_APP_SERVICE, CHANNEL_TELEGRAM, CHANNEL_MOBILE_APP, ACTIONS,
@@ -86,3 +90,121 @@ async def _dispatch(hass, opts, text, caption, payload) -> None:
         }, blocking=True)
     else:
         _LOGGER.warning("plant_care: unknown notify channel %r", channel)
+
+
+async def async_handle_action(hass, coordinator, payload) -> None:
+    """Apply a reminder tap: parse the payload and mark the plant done/treated.
+
+    A stale or malformed tap must never raise — the user pressed a button on an
+    old notification and there's nothing to surface back to them.
+    """
+    decoded = decode_action(payload)
+    if decoded is None:
+        return
+    sid, action = decoded
+    # Guard unknown subentry: a tap on a notification for a since-removed plant.
+    if sid not in coordinator.config_entry.subentries:
+        return
+    try:
+        if action in ("water", "feed"):
+            await coordinator.async_mark_done(sid, action)
+        elif action == "treatment":
+            sub = coordinator.config_entry.subentries[sid]
+            cfg = PlantConfig.from_data(dict(sub.data))
+            await coordinator.async_mark_treated(sid, cfg.treatment_interval)
+    except Exception:  # a stale tap (e.g. plant un-seeded) must not raise
+        _LOGGER.warning(
+            "plant_care: failed to apply reminder action %s for %s",
+            action, sid, exc_info=True,
+        )
+
+
+async def _tg_handle(hass, coordinator, opts, ns, data) -> None:
+    """Handle a Telegram callback: mark the plant, then ack + edit the message.
+
+    Both the answer_callback_query and edit_message calls are best-effort; a
+    failure there must not undo the mark or raise.
+    """
+    await async_handle_action(hass, coordinator, data)
+    cfg_entry = opts.get(CONF_TELEGRAM_CONFIG_ENTRY)
+    if not cfg_entry:
+        return
+    try:
+        if hass.services.has_service("telegram_bot", "answer_callback_query"):
+            await hass.services.async_call("telegram_bot", "answer_callback_query", {
+                "callback_query_id": ns.attributes.get("id"),
+                "config_entry_id": cfg_entry,
+                "message": "✅",
+            }, blocking=False)
+    except Exception:
+        _LOGGER.debug("plant_care: telegram answer_callback_query failed", exc_info=True)
+    try:
+        message = ns.attributes.get("message") or {}
+        message_id = message.get("message_id")
+        chat_id = ns.attributes.get("chat_id")
+        if (
+            message_id is not None
+            and chat_id is not None
+            and hass.services.has_service("telegram_bot", "edit_message")
+        ):
+            await hass.services.async_call("telegram_bot", "edit_message", {
+                "type": "text",
+                "config_entry_id": cfg_entry,
+                "message_id": message_id,
+                "chat_id": chat_id,
+                "message": "✅ Готово",
+            }, blocking=False)
+    except Exception:
+        _LOGGER.debug("plant_care: telegram edit_message failed", exc_info=True)
+
+
+def register_callbacks(hass, entry, coordinator, opts) -> list:
+    """Subscribe to reminder taps; return unsub callables (caller stores them)."""
+    unsubs: list = []
+
+    # mobile_app actionable notifications fire this bus event on tap.
+    @callback
+    def _mobile_app(event):
+        hass.async_create_task(
+            async_handle_action(hass, coordinator, event.data.get("action"))
+        )
+
+    unsubs.append(hass.bus.async_listen("mobile_app_notification_action", _mobile_app))
+
+    tg_entry = opts.get(CONF_TELEGRAM_CONFIG_ENTRY)
+    if tg_entry:
+        try:
+            reg = er.async_get(hass)
+            event_ids = [
+                e.entity_id
+                for e in er.async_entries_for_config_entry(reg, tg_entry)
+                if e.domain == "event"
+            ]
+        except Exception:
+            event_ids = []
+        if event_ids:
+            @callback
+            def _tg(event):
+                ns = event.data.get("new_state")
+                if not ns:
+                    return
+                if ns.attributes.get("event_type") != "telegram_callback":
+                    return
+                data = str(ns.attributes.get("data") or "")
+                if not data.startswith("pcs::"):
+                    return
+                hass.async_create_task(_tg_handle(hass, coordinator, opts, ns, data))
+
+            unsubs.append(async_track_state_change_event(hass, event_ids, _tg))
+
+        # Fallback for polling/legacy bots that DO fire the bus event.
+        @callback
+        def _tg_bus(event):
+            data = str(event.data.get("data") or "")
+            if not data.startswith("pcs::"):
+                return
+            hass.async_create_task(async_handle_action(hass, coordinator, data))
+
+        unsubs.append(hass.bus.async_listen("telegram_callback", _tg_bus))
+
+    return unsubs
