@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -37,6 +38,9 @@ async def async_setup_entry(
 
 class PlantDaysSensor(PlantCareEntity, SensorEntity):
     _attr_native_unit_of_measurement = "d"
+    # Derived countdowns -> "Diagnostic" section on the device page (the
+    # actionable next-date/needs-* entities stay primary). UI-only attribute.
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, subentry, key):
         super().__init__(coordinator, subentry)
@@ -51,6 +55,7 @@ class PlantDaysSensor(PlantCareEntity, SensorEntity):
 
 class PlantTreatmentsLeftSensor(PlantCareEntity, SensorEntity):
     _attr_translation_key = "treatments_left"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, subentry):
         super().__init__(coordinator, subentry)

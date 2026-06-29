@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity, NumberMode
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -34,6 +35,9 @@ class PlantIntervalNumber(PlantCareEntity, NumberEntity):
     _attr_native_step = 1
     _attr_mode = NumberMode.BOX
     _attr_native_unit_of_measurement = "d"
+    # Tuck intervals into the device page's "Configuration" section — they're
+    # settings, not at-a-glance status. Does not change entity_id/state/history.
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, subentry, key, slug):
         super().__init__(coordinator, subentry)
