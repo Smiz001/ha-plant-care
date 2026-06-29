@@ -5,11 +5,16 @@ import logging
 
 from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_time_change,
+)
+from homeassistant.util import dt as dt_util
 
 from .const import (
-    CONF_NOTIFY_CHANNEL, CONF_TELEGRAM_CONFIG_ENTRY, CONF_TELEGRAM_CHAT_ID,
-    CONF_MOBILE_APP_SERVICE, CHANNEL_TELEGRAM, CHANNEL_MOBILE_APP, ACTIONS,
+    CONF_NOTIFICATIONS_ENABLED, CONF_NOTIFY_CHANNEL, CONF_REMINDER_TIME,
+    CONF_TELEGRAM_CONFIG_ENTRY, CONF_TELEGRAM_CHAT_ID, CONF_MOBILE_APP_SERVICE,
+    CHANNEL_TELEGRAM, CHANNEL_MOBILE_APP, DEFAULT_REMINDER_TIME, ACTIONS,
 )
 from .models import PlantConfig
 
@@ -36,6 +41,24 @@ def decode_action(payload: str | None) -> tuple[str, str] | None:
     if len(parts) == 3 and parts[0] == "pcs" and parts[2] in ACTIONS:
         return parts[1], parts[2]
     return None
+
+
+async def async_setup_notifications(hass, entry, coordinator) -> None:
+    """Register the daily reminder trigger + tap listeners when enabled (opt-in)."""
+    if not entry.options.get(CONF_NOTIFICATIONS_ENABLED):
+        return
+    rt = dt_util.parse_time(entry.options.get(CONF_REMINDER_TIME, DEFAULT_REMINDER_TIME)) \
+        or dt_util.parse_time(DEFAULT_REMINDER_TIME)
+
+    async def _daily(now):
+        coordinator.async_update_listeners()  # keep dashboard in sync with the reminder
+        await async_send_due_reminders(hass, entry, coordinator, dict(entry.options))
+
+    entry.async_on_unload(
+        async_track_time_change(hass, _daily, hour=rt.hour, minute=rt.minute, second=0)
+    )
+    for unsub in register_callbacks(hass, entry, coordinator, dict(entry.options)):
+        entry.async_on_unload(unsub)
 
 
 async def async_send_due_reminders(hass, entry, coordinator, opts) -> None:

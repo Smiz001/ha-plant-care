@@ -12,15 +12,13 @@ from .const import (
     CONF_FEED_INTERVAL,
     CONF_NEXT_FEED,
     CONF_NEXT_WATER,
-    CONF_REMINDER_TIME,
     CONF_WATER_INTERVAL,
     DEFAULT_FEED_INTERVAL,
-    DEFAULT_REMINDER_TIME,
     DEFAULT_WATER_INTERVAL,
     PLATFORMS,
 )
 from .coordinator import PlantCareCoordinator
-from .notify_reminder import async_send_due_reminders
+from .notifications import async_setup_notifications
 
 type PlantCareConfigEntry = ConfigEntry[PlantCareCoordinator]
 
@@ -64,18 +62,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: PlantCareConfigEntry) ->
         async_track_time_change(hass, _midnight_refresh, hour=0, minute=0, second=10)
     )
 
-    rt = dt_util.parse_time(
-        entry.options.get(CONF_REMINDER_TIME, DEFAULT_REMINDER_TIME)
-    ) or dt_util.parse_time(DEFAULT_REMINDER_TIME)
-
-    async def _daily(now):
-        # Refresh first so the dashboard matches what the notification says.
-        coordinator.async_update_listeners()
-        await async_send_due_reminders(hass, entry)
-
-    entry.async_on_unload(
-        async_track_time_change(hass, _daily, hour=rt.hour, minute=rt.minute, second=0)
-    )
+    # Opt-in built-in actionable reminders (daily trigger + tap listeners).
+    # No-op unless CONF_NOTIFICATIONS_ENABLED is set; re-evaluated on every
+    # reload (options edits reload the entry via _async_reload).
+    await async_setup_notifications(hass, entry, coordinator)
 
     return True
 
