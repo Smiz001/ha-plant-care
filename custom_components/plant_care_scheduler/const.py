@@ -47,3 +47,13 @@ CONF_TREATMENT_UNTIL = "treatment_until"
 CONF_NEXT_TREATMENT = "next_treatment"
 CONF_TREATMENTS_LEFT = "treatments_left"
 DEFAULT_TREATMENT_INTERVAL = 7
+
+# built-in notifications (opt-in)
+CONF_NOTIFICATIONS_ENABLED = "notifications_enabled"
+CONF_NOTIFY_CHANNEL = "notify_channel"           # "telegram" | "mobile_app"
+CONF_TELEGRAM_CONFIG_ENTRY = "telegram_config_entry_id"
+CONF_TELEGRAM_CHAT_ID = "telegram_chat_id"
+CONF_MOBILE_APP_SERVICE = "mobile_app_service"   # e.g. "notify.mobile_app_pixel"
+CHANNEL_TELEGRAM = "telegram"
+CHANNEL_MOBILE_APP = "mobile_app"
+ACTIONS = ("water", "feed", "treatment")
