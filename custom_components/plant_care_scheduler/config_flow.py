@@ -133,6 +133,25 @@ def _remove_feed_entities(hass, subentry_id: str) -> None:
             reg.async_remove(eid)
 
 
+# (platform, unique_id suffix) of each per-plant treatment entity.
+_TREATMENT_ENTITIES = (
+    ("binary_sensor", "needs_treatment"),
+    ("sensor", "days_to_treatment"),
+    ("sensor", "treatments_left"),
+    ("date", "next_treatment"),
+    ("button", "mark_treated"),
+)
+
+
+def _remove_treatment_entities(hass, subentry_id: str) -> None:
+    """Unregister this plant's treatment entities (used when a course is stopped)."""
+    reg = er.async_get(hass)
+    for platform, suffix in _TREATMENT_ENTITIES:
+        eid = reg.async_get_entity_id(platform, DOMAIN, f"{subentry_id}_{suffix}")
+        if eid:
+            reg.async_remove(eid)
+
+
 class PlantCareConfigFlow(ConfigFlow, domain=DOMAIN):
     """Single-instance hub flow."""
 
@@ -261,6 +280,11 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 ):
                     new_data.pop(k, None)
                 await coord.async_clear_treatment(subentry.subentry_id)
+                # Like feeding: the platforms stop adding treatment entities on
+                # reload, but HA leaves the already-registered ones as orphans
+                # (auto-prune only happens on subentry removal). Remove them
+                # explicitly so the device doesn't keep stale, unavailable entities.
+                _remove_treatment_entities(self.hass, subentry.subentry_id)
             # Feeding turned off: the platforms will stop adding the feed
             # entities on reload, but HA leaves the already-registered ones as
             # orphans (auto-prune only happens on subentry removal). Remove them

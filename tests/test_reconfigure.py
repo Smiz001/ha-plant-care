@@ -98,6 +98,24 @@ async def test_reconfigure_starts_and_stops_treatment(hass):
     assert not sub.data.get(CONF_TREATMENT_NAME)
 
 
+async def test_reconfigure_stop_treatment_removes_entities(hass):
+    from homeassistant.helpers import entity_registry as er
+    from tests.helpers import setup_one_plant_with_treatment
+    entry, sid = await setup_one_plant_with_treatment(hass)  # active course
+    reg = er.async_get(hass)
+    assert reg.async_get_entity_id("button", "plant_care_scheduler", f"{sid}_mark_treated") is not None
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, "plant"), context={"source": "reconfigure", "subentry_id": sid})
+    # submit with an EMPTY treatment name -> stop the course
+    await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"name": "Жасмин", "emoji": "🌼", "treatment_name": ""})
+    await hass.async_block_till_done()
+    for platform, suffix in (("binary_sensor", "needs_treatment"), ("sensor", "days_to_treatment"),
+                             ("sensor", "treatments_left"), ("date", "next_treatment"),
+                             ("button", "mark_treated")):
+        assert reg.async_get_entity_id(platform, "plant_care_scheduler", f"{sid}_{suffix}") is None, f"orphan {suffix}"
+
+
 async def test_reconfigure_edit_preserves_active_treatment_schedule(hass):
     # Editing an unrelated field (emoji) on an active-treatment plant must NOT
     # restart the in-progress course: next_treatment/treatments_left live in the
