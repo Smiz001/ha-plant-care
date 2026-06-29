@@ -1,5 +1,6 @@
 """The hub wires the opt-in actionable reminder (daily trigger), gated on the flag."""
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from custom_components.plant_care_scheduler.const import (
@@ -20,7 +21,7 @@ async def test_daily_trigger_sends_when_enabled(hass: HomeAssistant, freezer):
         CONF_REMINDER_TIME: "08:30:00",
     })
     freezer.move_to("2026-06-28 08:30:01")
-    async_fire_time_changed(hass)
+    async_fire_time_changed(hass, dt_util.now())
     await hass.async_block_till_done()
     assert len(calls) == 1
 
@@ -34,6 +35,6 @@ async def test_no_trigger_when_disabled(hass: HomeAssistant, freezer):
         CONF_REMINDER_TIME: "08:30:00",  # notifications NOT enabled
     })
     freezer.move_to("2026-06-28 08:30:01")
-    async_fire_time_changed(hass)
+    async_fire_time_changed(hass, dt_util.now())
     await hass.async_block_till_done()
     assert calls == []
