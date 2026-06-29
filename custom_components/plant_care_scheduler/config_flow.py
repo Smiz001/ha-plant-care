@@ -13,7 +13,7 @@ from homeassistant.config_entries import (
     OptionsFlow,
     SubentryFlowResult,
 )
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er, selector
 from homeassistant.util import dt as dt_util
 
@@ -124,7 +124,7 @@ _FEED_ENTITIES = (
 )
 
 
-def _remove_feed_entities(hass, subentry_id: str) -> None:
+def _remove_feed_entities(hass: HomeAssistant, subentry_id: str) -> None:
     """Unregister this plant's feed entities (used when feeding is disabled)."""
     reg = er.async_get(hass)
     for platform, suffix in _FEED_ENTITIES:
@@ -143,7 +143,7 @@ _TREATMENT_ENTITIES = (
 )
 
 
-def _remove_treatment_entities(hass, subentry_id: str) -> None:
+def _remove_treatment_entities(hass: HomeAssistant, subentry_id: str) -> None:
     """Unregister this plant's treatment entities (used when a course is stopped)."""
     reg = er.async_get(hass)
     for platform, suffix in _TREATMENT_ENTITIES:
