@@ -17,7 +17,12 @@ async def test_sends_telegram_for_due_plant(hass: HomeAssistant, freezer):
     assert len(calls) == 1
     data = calls[0].data
     assert data["chat_id"] == "42" and data["config_entry_id"] == "TG"
-    assert ("pcs::%s::water" % sid) in str(data["inline_keyboard"])
+    # The button must be a [text, data] PAIR (telegram_bot list-format), NOT a
+    # "text:data" string — a string crashes _make_row_inline_keyboard on the
+    # real telegram_bot ("too many values to unpack"). Regression guard.
+    button = data["inline_keyboard"][0][0]
+    assert isinstance(button, (list, tuple)) and len(button) == 2
+    assert button[1] == ("pcs::%s::water" % sid)
     assert "полить" in data["message"]
 
 

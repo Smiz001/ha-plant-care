@@ -97,7 +97,7 @@ async def _dispatch(hass, opts, text, caption, payload) -> None:
             return
         await hass.services.async_call("telegram_bot", "send_message", {
             "config_entry_id": cfg_entry, "chat_id": chat_id, "parse_mode": "markdown",
-            "message": text, "inline_keyboard": [[f"{caption}:{payload}"]],
+            "message": text, "inline_keyboard": [[[caption, payload]]],
         }, blocking=True)
     elif channel == CHANNEL_MOBILE_APP:
         svc = opts.get(CONF_MOBILE_APP_SERVICE) or ""
@@ -170,11 +170,16 @@ async def _tg_handle(hass, coordinator, opts, ns, data) -> None:
             and chat_id is not None
             and hass.services.has_service("telegram_bot", "edit_message")
         ):
+            # Keep the original reminder text and append a ✅ + date (like the
+            # legacy YAML), instead of replacing the whole message.
+            orig = message.get("text") or ""
+            stamp = dt_util.now().strftime("%d.%m")
+            edited = f"{orig} — ✅ {stamp}" if orig else f"✅ {stamp}"
             await hass.services.async_call("telegram_bot", "edit_message", {
                 "config_entry_id": cfg_entry,
                 "message_id": message_id,
                 "chat_id": chat_id,
-                "message": "✅ Готово",
+                "message": edited,
             }, blocking=False)
     except Exception:
         _LOGGER.debug("plant_care: telegram edit_message failed", exc_info=True)
