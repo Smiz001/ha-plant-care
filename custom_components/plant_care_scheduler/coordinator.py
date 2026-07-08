@@ -45,6 +45,7 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         self._store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._live: dict[str, dict] = {}
         self._warned_corrupt: set[str] = set()
+        self._weather: dict | None = None
 
     def _parse_or_today(
         self, subentry_id: str, live: dict, key: str, today: date
@@ -79,6 +80,31 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
 
     async def async_load(self) -> None:
         self._live = await self._store.async_load() or {}
+
+    async def async_refresh_weather(self, weather_entity: str | None) -> None:
+        """Fetch + cache today's weather (condition, precip, high temp) for the hub."""
+        if not weather_entity:
+            self._weather = None
+            return
+        st = self.hass.states.get(weather_entity)
+        if st is None or st.state in ("unknown", "unavailable"):
+            self._weather = None
+            return
+        weather = {"condition": st.state, "precip_today": None, "temp_high": None}
+        try:
+            resp = await self.hass.services.async_call(
+                "weather", "get_forecasts",
+                {"entity_id": weather_entity, "type": "daily"},
+                blocking=True, return_response=True,
+            )
+            fc = (resp or {}).get(weather_entity, {}).get("forecast") or []
+            if fc:
+                weather["precip_today"] = fc[0].get("precipitation")
+                weather["temp_high"] = fc[0].get("temperature")
+        except Exception:
+            _LOGGER.warning("plant_care: weather forecast fetch failed for %s", weather_entity, exc_info=True)
+        self._weather = weather
+        self.async_update_listeners()
 
     async def _save(self) -> None:
         await self._store.async_save(self._live)
