@@ -56,3 +56,14 @@ CONF_MOBILE_APP_SERVICE = "mobile_app_service"   # e.g. "notify.mobile_app_pixel
 CHANNEL_TELEGRAM = "telegram"
 CHANNEL_MOBILE_APP = "mobile_app"
 ACTIONS = ("water", "feed", "treatment")
+
+# weather-aware watering (opt-in)
+CONF_WEATHER_ENTITY = "weather_entity"
+CONF_WEATHER_ENABLED = "weather_enabled"
+CONF_RAIN_SKIP = "rain_skip"
+RAIN_CONDITIONS = frozenset({"rainy", "pouring", "lightning-rainy", "snowy-rainy", "hail"})
+RAIN_MM = 2.0
+HEAT_BASE = 25.0
+HEAT_SLOPE = 0.03
+HEAT_FACTOR_MIN = 0.6
+HEAT_FACTOR_MAX = 1.2

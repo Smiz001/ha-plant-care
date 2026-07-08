@@ -10,10 +10,18 @@ from .const import (
     CONF_MOISTURE_SENSOR,
     CONF_MOISTURE_THRESHOLD,
     CONF_NAME,
+    CONF_RAIN_SKIP,
     CONF_TREATMENT_INTERVAL,
     CONF_TREATMENT_NAME,
     CONF_TREATMENT_UNTIL,
+    CONF_WEATHER_ENABLED,
     DEFAULT_EMOJI,
+    HEAT_BASE,
+    HEAT_FACTOR_MAX,
+    HEAT_FACTOR_MIN,
+    HEAT_SLOPE,
+    RAIN_CONDITIONS,
+    RAIN_MM,
 )
 
 
@@ -29,6 +37,8 @@ class PlantConfig:
     treatment_name: str | None
     treatment_interval: int | None
     treatment_until: date | None
+    weather_enabled: bool
+    rain_skip: bool
 
     @property
     def has_treatment(self) -> bool:
@@ -66,6 +76,8 @@ class PlantConfig:
             treatment_name=t_name,
             treatment_interval=t_int,
             treatment_until=t_until,
+            weather_enabled=bool(data.get(CONF_WEATHER_ENABLED, False)),
+            rain_skip=bool(data.get(CONF_RAIN_SKIP, False)),
         )
 
 
@@ -98,3 +110,21 @@ def treatment_finished(treatments_left, treatment_until, today: date) -> bool:
     if treatment_until is not None and today > treatment_until:
         return True
     return False
+
+
+def heat_factor(temp_high: float) -> float:
+    """Interval multiplier from forecast high: <1 when hot (water sooner), >1 when cool."""
+    f = 1.0 - (temp_high - HEAT_BASE) * HEAT_SLOPE
+    return max(HEAT_FACTOR_MIN, min(HEAT_FACTOR_MAX, f))
+
+
+def heat_shift(interval: int, temp_high: float) -> int:
+    """Days to shift the due date: positive = earlier (hot), negative = later (cool)."""
+    return round(interval * (1.0 - heat_factor(temp_high)))
+
+
+def is_rainy(condition, precip) -> bool:
+    """True when the forecast condition is a rain-type or precipitation meets the threshold."""
+    if condition in RAIN_CONDITIONS:
+        return True
+    return precip is not None and precip >= RAIN_MM
