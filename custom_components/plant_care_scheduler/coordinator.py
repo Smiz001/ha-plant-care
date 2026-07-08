@@ -24,7 +24,15 @@ from .const import (
     DOMAIN,
     STORAGE_VERSION,
 )
-from .models import days_until, is_calendar_due, is_moisture_due, next_after_action, treatment_finished
+from .models import (
+    days_until,
+    heat_shift,
+    is_calendar_due,
+    is_moisture_due,
+    is_rainy,
+    next_after_action,
+    treatment_finished,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -162,12 +170,19 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         treatment_name: str | None = None,
         treatment_interval: int | None = None,
         treatment_until=None,
+        *,
+        weather_enabled: bool = False,
+        rain_skip: bool = False,
     ) -> dict:
         live = self._plant(subentry_id)
         today = dt_util.now().date()
+        water_interval = live.get(CONF_WATER_INTERVAL, DEFAULT_WATER_INTERVAL)
         next_water = self._parse_or_today(subentry_id, live, CONF_NEXT_WATER, today)
         next_feed = self._parse_or_today(subentry_id, live, CONF_NEXT_FEED, today)
         moisture = self._moisture(cfg_moisture_sensor)
+        # Plain days-to-water; the calendar branch may override this with a
+        # weather-adjusted value.
+        days_to_water = days_until(next_water, today)
         # Only trust the moisture reading when it is actually known. If the
         # sensor is unavailable/unknown/non-numeric, fall back to the calendar
         # so an overdue plant still reports "due" instead of silently "not due".
@@ -176,9 +191,21 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
             and cfg_moisture_threshold is not None
             and moisture is not None
         ):
+            # Moisture wins: a live reading is ground truth, so weather
+            # (heat-adjust / rain-skip) is deliberately NOT applied here.
             needs_water = is_moisture_due(moisture, cfg_moisture_threshold)
         else:
-            needs_water = is_calendar_due(next_water, today)
+            # Calendar branch: nudge the due date earlier when hot / later when
+            # cool, then let rain defer a plant that would otherwise be due.
+            shift = 0
+            w = self._weather
+            if weather_enabled and w and w.get("temp_high") is not None:
+                shift = heat_shift(water_interval, w["temp_high"])
+            effective_due = next_water - timedelta(days=shift)
+            days_to_water = days_until(effective_due, today)
+            needs_water = is_calendar_due(effective_due, today)
+            if rain_skip and w and is_rainy(w.get("condition"), w.get("precip_today")):
+                needs_water = False
 
         nt_raw = live.get(CONF_NEXT_TREATMENT)
         if nt_raw:
@@ -208,11 +235,11 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         return {
             # Default missing interval keys: a partial/older Store must not
             # KeyError and break every entity for this plant.
-            CONF_WATER_INTERVAL: live.get(CONF_WATER_INTERVAL, DEFAULT_WATER_INTERVAL),
+            CONF_WATER_INTERVAL: water_interval,
             CONF_FEED_INTERVAL: live.get(CONF_FEED_INTERVAL, DEFAULT_FEED_INTERVAL),
             CONF_NEXT_WATER: next_water,
             CONF_NEXT_FEED: next_feed,
-            "days_to_water": days_until(next_water, today),
+            "days_to_water": days_to_water,
             "days_to_feed": days_until(next_feed, today),
             "needs_water": needs_water,
             "needs_feed": is_calendar_due(next_feed, today),

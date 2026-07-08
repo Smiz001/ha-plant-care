@@ -35,4 +35,6 @@ class PlantCareEntity(CoordinatorEntity[PlantCareCoordinator]):
             self._cfg.treatment_name,
             self._cfg.treatment_interval,
             self._cfg.treatment_until,
+            weather_enabled=self._cfg.weather_enabled,
+            rain_skip=self._cfg.rain_skip,
         )
