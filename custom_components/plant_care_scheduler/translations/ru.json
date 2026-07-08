@@ -19,7 +19,8 @@
           "notify_channel": "Канал напоминаний",
           "telegram_config_entry_id": "Telegram: id конфиг-записи бота",
           "telegram_chat_id": "Telegram: chat id",
-          "mobile_app_service": "Сервис mobile_app (напр. notify.mobile_app_phone)"
+          "mobile_app_service": "Сервис mobile_app (напр. notify.mobile_app_phone)",
+          "weather_entity": "Погодная сущность"
         }
       }
     }
@@ -40,7 +41,9 @@
             "next_feed": "Следующая подкормка",
             "feeding_enabled": "Подкормка включена",
             "moisture_sensor": "Датчик влажности почвы (опционально)",
-            "moisture_threshold": "Порог влажности (%)"
+            "moisture_threshold": "Порог влажности (%)",
+            "weather_enabled": "Учитывать погоду",
+            "rain_skip": "Пропускать полив при дожде"
           }
         },
         "reconfigure": {
@@ -51,6 +54,8 @@
             "feeding_enabled": "Подкормка включена",
             "moisture_sensor": "Датчик влажности почвы (опционально)",
             "moisture_threshold": "Порог влажности (%)",
+            "weather_enabled": "Учитывать погоду",
+            "rain_skip": "Пропускать полив при дожде",
             "treatment_name": "Название лечения (пусто = без лечения)",
             "treatment_interval": "Интервал обработки (дни)",
             "next_treatment": "Следующая обработка",

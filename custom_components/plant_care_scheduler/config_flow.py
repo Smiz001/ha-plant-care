@@ -32,6 +32,7 @@ from .const import (
     CONF_NEXT_WATER,
     CONF_NOTIFICATIONS_ENABLED,
     CONF_NOTIFY_CHANNEL,
+    CONF_RAIN_SKIP,
     CONF_REMINDER_TIME,
     CONF_SCHEMA_VERSION,
     CONF_TELEGRAM_CHAT_ID,
@@ -41,6 +42,8 @@ from .const import (
     CONF_TREATMENT_UNTIL,
     CONF_TREATMENTS_LEFT,
     CONF_WATER_INTERVAL,
+    CONF_WEATHER_ENABLED,
+    CONF_WEATHER_ENTITY,
     DEFAULT_EMOJI,
     DEFAULT_FEED_INTERVAL,
     DEFAULT_REMINDER_TIME,
@@ -108,6 +111,14 @@ def _plant_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
                 min=0, max=100, mode=selector.NumberSelectorMode.BOX
             )
         ),
+        vol.Optional(
+            CONF_WEATHER_ENABLED,
+            default=d.get(CONF_WEATHER_ENABLED, False),
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            CONF_RAIN_SKIP,
+            default=d.get(CONF_RAIN_SKIP, False),
+        ): selector.BooleanSelector(),
     }
     return vol.Schema(schema)
 
@@ -231,6 +242,12 @@ class PlantCareOptionsFlow(OptionsFlow):
                     CONF_MOBILE_APP_SERVICE,
                     default=opts.get(CONF_MOBILE_APP_SERVICE, ""),
                 ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_WEATHER_ENTITY,
+                    default=opts.get(CONF_WEATHER_ENTITY, ""),
+                ): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="weather")
+                ),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
@@ -253,6 +270,8 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 CONF_FEEDING_ENABLED: bool(user_input.get(CONF_FEEDING_ENABLED, True)),
                 CONF_MOISTURE_SENSOR: user_input.get(CONF_MOISTURE_SENSOR) or None,
                 CONF_MOISTURE_THRESHOLD: user_input.get(CONF_MOISTURE_THRESHOLD),
+                CONF_WEATHER_ENABLED: bool(user_input.get(CONF_WEATHER_ENABLED, False)),
+                CONF_RAIN_SKIP: bool(user_input.get(CONF_RAIN_SKIP, False)),
                 CONF_SCHEMA_VERSION: SCHEMA_VERSION,
             }
             return self.async_create_entry(title=data[CONF_NAME], data=data)
@@ -276,6 +295,8 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                 CONF_FEEDING_ENABLED: bool(user_input.get(CONF_FEEDING_ENABLED, True)),
                 CONF_MOISTURE_SENSOR: user_input.get(CONF_MOISTURE_SENSOR) or None,
                 CONF_MOISTURE_THRESHOLD: user_input.get(CONF_MOISTURE_THRESHOLD),
+                CONF_WEATHER_ENABLED: bool(user_input.get(CONF_WEATHER_ENABLED, False)),
+                CONF_RAIN_SKIP: bool(user_input.get(CONF_RAIN_SKIP, False)),
                 CONF_SCHEMA_VERSION: SCHEMA_VERSION,
             }
             # Treatment: a non-empty name starts/edits a course; an empty (or
@@ -361,6 +382,15 @@ class PlantSubentryFlowHandler(ConfigSubentryFlow):
                         min=0, max=100, mode=selector.NumberSelectorMode.BOX
                     )
                 ),
+                # Weather toggles: plain bools with a static False default so a
+                # plant without weather config stays off. Pre-fill from
+                # subentry.data via add_suggested_values_to_schema below.
+                vol.Optional(
+                    CONF_WEATHER_ENABLED, default=False
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_RAIN_SKIP, default=False
+                ): selector.BooleanSelector(),
                 # Treatment fields: optional, pre-filled via suggested values
                 # (same mechanism as moisture) so clearing the name stops the
                 # course. Only the interval carries a static default.

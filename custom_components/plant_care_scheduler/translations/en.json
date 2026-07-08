@@ -19,7 +19,8 @@
           "notify_channel": "Reminder channel",
           "telegram_config_entry_id": "Telegram: bot config entry id",
           "telegram_chat_id": "Telegram: chat id",
-          "mobile_app_service": "Mobile app notify service (e.g. notify.mobile_app_phone)"
+          "mobile_app_service": "Mobile app notify service (e.g. notify.mobile_app_phone)",
+          "weather_entity": "Weather entity"
         }
       }
     }
@@ -40,7 +41,9 @@
             "next_feed": "Next feeding",
             "feeding_enabled": "Feeding enabled",
             "moisture_sensor": "Soil moisture sensor (optional)",
-            "moisture_threshold": "Moisture threshold (%)"
+            "moisture_threshold": "Moisture threshold (%)",
+            "weather_enabled": "Weather-aware watering",
+            "rain_skip": "Skip watering when raining"
           }
         },
         "reconfigure": {
@@ -51,6 +54,8 @@
             "feeding_enabled": "Feeding enabled",
             "moisture_sensor": "Soil moisture sensor (optional)",
             "moisture_threshold": "Moisture threshold (%)",
+            "weather_enabled": "Weather-aware watering",
+            "rain_skip": "Skip watering when raining",
             "treatment_name": "Treatment name (empty = no treatment)",
             "treatment_interval": "Treatment interval (days)",
             "next_treatment": "Next treatment",
