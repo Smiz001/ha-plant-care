@@ -70,6 +70,7 @@ async def async_send_due_reminders(hass, entry, coordinator, opts) -> None:
         snap = coordinator.snapshot(
             sub.subentry_id, cfg.moisture_sensor, cfg.moisture_threshold,
             cfg.treatment_name, cfg.treatment_interval, cfg.treatment_until,
+            weather_enabled=cfg.weather_enabled, rain_skip=cfg.rain_skip,
         )
         for action in ACTIONS:
             if action == "feed" and not cfg.feeding_enabled:

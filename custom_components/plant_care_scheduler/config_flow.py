@@ -242,10 +242,10 @@ class PlantCareOptionsFlow(OptionsFlow):
                     CONF_MOBILE_APP_SERVICE,
                     default=opts.get(CONF_MOBILE_APP_SERVICE, ""),
                 ): selector.TextSelector(),
-                vol.Optional(
-                    CONF_WEATHER_ENTITY,
-                    default=opts.get(CONF_WEATHER_ENTITY, ""),
-                ): selector.EntitySelector(
+                # Bare EntitySelector: an empty-string default would fail
+                # validation (rejects "") and block the whole options form, so
+                # omit the key when unset — mirror the moisture sensor pattern.
+                _opt(CONF_WEATHER_ENTITY, dict(opts)): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="weather")
                 ),
             }

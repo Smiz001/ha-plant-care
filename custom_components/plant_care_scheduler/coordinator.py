@@ -45,6 +45,19 @@ def _parse(s: str) -> date:
     return date.fromisoformat(s)
 
 
+def _num(v) -> float | None:
+    """Coerce a forecast value to float, or None if missing/non-numeric.
+
+    Forecast providers may hand back ``None`` or a non-numeric string; storing
+    that verbatim would later raise inside the pure snapshot arithmetic
+    (heat_shift / is_rainy), so normalise at the fetch boundary.
+    """
+    try:
+        return float(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
     """Owns the live-value Store and exposes per-plant snapshots."""
 
@@ -107,8 +120,8 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
             )
             fc = (resp or {}).get(weather_entity, {}).get("forecast") or []
             if fc:
-                weather["precip_today"] = fc[0].get("precipitation")
-                weather["temp_high"] = fc[0].get("temperature")
+                weather["precip_today"] = _num(fc[0].get("precipitation"))
+                weather["temp_high"] = _num(fc[0].get("temperature"))
         except Exception:
             _LOGGER.warning("plant_care: weather forecast fetch failed for %s", weather_entity, exc_info=True)
         self._weather = weather
