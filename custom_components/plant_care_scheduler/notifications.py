@@ -14,7 +14,7 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_NOTIFICATIONS_ENABLED, CONF_NOTIFY_CHANNEL, CONF_REMINDER_TIME,
     CONF_TELEGRAM_CONFIG_ENTRY, CONF_TELEGRAM_CHAT_ID, CONF_MOBILE_APP_SERVICE,
-    CHANNEL_TELEGRAM, CHANNEL_MOBILE_APP, DEFAULT_REMINDER_TIME, ACTIONS,
+    CONF_WEATHER_ENTITY, CHANNEL_TELEGRAM, CHANNEL_MOBILE_APP, DEFAULT_REMINDER_TIME, ACTIONS,
 )
 from .models import PlantConfig
 
@@ -52,6 +52,9 @@ async def async_setup_notifications(hass, entry, coordinator) -> None:
 
     async def _daily(now):
         coordinator.async_update_listeners()  # keep dashboard in sync with the reminder
+        # Refresh weather right before deciding what's due, so a rain-skip/heat-adjust
+        # reflects current conditions even if the hourly refresh hasn't landed yet.
+        await coordinator.async_refresh_weather(entry.options.get(CONF_WEATHER_ENTITY))
         await async_send_due_reminders(hass, entry, coordinator, dict(entry.options))
 
     entry.async_on_unload(

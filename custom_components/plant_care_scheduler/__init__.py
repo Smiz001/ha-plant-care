@@ -13,6 +13,7 @@ from .const import (
     CONF_NEXT_FEED,
     CONF_NEXT_WATER,
     CONF_WATER_INTERVAL,
+    CONF_WEATHER_ENTITY,
     DEFAULT_FEED_INTERVAL,
     DEFAULT_WATER_INTERVAL,
     PLATFORMS,
@@ -61,6 +62,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: PlantCareConfigEntry) ->
     entry.async_on_unload(
         async_track_time_change(hass, _midnight_refresh, hour=0, minute=0, second=10)
     )
+
+    # Weather-aware watering (opt-in): fetch once at setup so the snapshot is
+    # warm immediately, then keep it fresh hourly. Also refreshed right before
+    # the daily reminder fires (see notifications.py) so taps act on current
+    # conditions even if the hourly tick hasn't landed yet.
+    weather_entity = entry.options.get(CONF_WEATHER_ENTITY)
+    if weather_entity:
+        await coordinator.async_refresh_weather(weather_entity)
+
+        entry.async_on_unload(
+            async_track_time_change(
+                hass,
+                lambda now: hass.async_create_task(
+                    coordinator.async_refresh_weather(entry.options.get(CONF_WEATHER_ENTITY))
+                ),
+                minute=3,
+                second=0,
+            )
+        )
 
     # Opt-in built-in actionable reminders (daily trigger + tap listeners).
     # No-op unless CONF_NOTIFICATIONS_ENABLED is set; re-evaluated on every
