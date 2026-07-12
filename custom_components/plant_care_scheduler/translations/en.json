@@ -20,6 +20,7 @@
           "telegram_config_entry_id": "Telegram: bot config entry id",
           "telegram_chat_id": "Telegram: chat id",
           "mobile_app_service": "Mobile app notify service (e.g. notify.mobile_app_phone)",
+          "snooze_days": "Snooze days (⏰ Still wet)",
           "weather_entity": "Weather entity"
         }
       }

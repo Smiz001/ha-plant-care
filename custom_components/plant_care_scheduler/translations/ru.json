@@ -20,6 +20,7 @@
           "telegram_config_entry_id": "Telegram: id конфиг-записи бота",
           "telegram_chat_id": "Telegram: chat id",
           "mobile_app_service": "Сервис mobile_app (напр. notify.mobile_app_phone)",
+          "snooze_days": "Отсрочка «Ещё сыро» (дней)",
           "weather_entity": "Погодная сущность"
         }
       }

@@ -35,6 +35,7 @@ from .const import (
     CONF_RAIN_SKIP,
     CONF_REMINDER_TIME,
     CONF_SCHEMA_VERSION,
+    CONF_SNOOZE_DAYS,
     CONF_TELEGRAM_CHAT_ID,
     CONF_TELEGRAM_CONFIG_ENTRY,
     CONF_TREATMENT_INTERVAL,
@@ -47,6 +48,7 @@ from .const import (
     DEFAULT_EMOJI,
     DEFAULT_FEED_INTERVAL,
     DEFAULT_REMINDER_TIME,
+    DEFAULT_SNOOZE_DAYS,
     DEFAULT_TREATMENT_INTERVAL,
     DEFAULT_WATER_INTERVAL,
     DOMAIN,
@@ -242,6 +244,14 @@ class PlantCareOptionsFlow(OptionsFlow):
                     CONF_MOBILE_APP_SERVICE,
                     default=opts.get(CONF_MOBILE_APP_SERVICE, ""),
                 ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_SNOOZE_DAYS,
+                    default=opts.get(CONF_SNOOZE_DAYS, DEFAULT_SNOOZE_DAYS),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=1, max=14, mode=selector.NumberSelectorMode.BOX
+                    )
+                ),
                 # Bare EntitySelector: an empty-string default would fail
                 # validation (rejects "") and block the whole options form, so
                 # omit the key when unset — mirror the moisture sensor pattern.
