@@ -15,7 +15,7 @@ from .const import (
     CONF_NOTIFICATIONS_ENABLED, CONF_NOTIFY_CHANNEL, CONF_REMINDER_TIME,
     CONF_TELEGRAM_CONFIG_ENTRY, CONF_TELEGRAM_CHAT_ID, CONF_MOBILE_APP_SERVICE,
     CONF_WEATHER_ENTITY, CHANNEL_TELEGRAM, CHANNEL_MOBILE_APP, DEFAULT_REMINDER_TIME, ACTIONS,
-    SNOOZE_WATER,
+    SNOOZE_WATER, CONF_SNOOZE_DAYS, DEFAULT_SNOOZE_DAYS,
 )
 from .models import PlantConfig
 
@@ -82,14 +82,22 @@ async def async_send_due_reminders(hass, entry, coordinator, opts) -> None:
                 continue
             emoji, verb, caption = _PRES[action]
             text = f"{emoji} Пора *{verb}* {cfg.emoji} {cfg.name}"
-            payload = encode_action(sub.subentry_id, action)
+            done_payload = encode_action(sub.subentry_id, action)
+            buttons = [(caption, done_payload)]
+            if action == "water":
+                buttons.append(("⏰ Ещё сыро", encode_action(sub.subentry_id, SNOOZE_WATER)))
             try:
-                await _dispatch(hass, opts, text, caption, payload)
+                await _dispatch(hass, opts, text, buttons)
             except Exception:  # one plant's failure must not stop the rest
                 _LOGGER.warning("plant_care: reminder dispatch failed for %s/%s", sub.subentry_id, action, exc_info=True)
 
 
-async def _dispatch(hass, opts, text, caption, payload) -> None:
+async def _dispatch(hass, opts, text, buttons) -> None:
+    """Send `text` with one row of inline buttons.
+
+    `buttons` is a list of (caption, payload) tuples → a single keyboard row of
+    N buttons (Telegram) or N mobile_app actions.
+    """
     channel = opts.get(CONF_NOTIFY_CHANNEL)
     if channel == CHANNEL_TELEGRAM:
         cfg_entry = opts.get(CONF_TELEGRAM_CONFIG_ENTRY)
@@ -102,7 +110,7 @@ async def _dispatch(hass, opts, text, caption, payload) -> None:
             return
         await hass.services.async_call("telegram_bot", "send_message", {
             "config_entry_id": cfg_entry, "chat_id": chat_id, "parse_mode": "markdown",
-            "message": text, "inline_keyboard": [[[caption, payload]]],
+            "message": text, "inline_keyboard": [[[c, p] for (c, p) in buttons]],
         }, blocking=True)
     elif channel == CHANNEL_MOBILE_APP:
         svc = opts.get(CONF_MOBILE_APP_SERVICE) or ""
@@ -114,7 +122,7 @@ async def _dispatch(hass, opts, text, caption, payload) -> None:
             _LOGGER.warning("plant_care: %s unavailable", svc)
             return
         await hass.services.async_call(domain, service, {
-            "message": text, "data": {"actions": [{"action": payload, "title": caption}]},
+            "message": text, "data": {"actions": [{"action": p, "title": c} for (c, p) in buttons]},
         }, blocking=True)
     else:
         _LOGGER.warning("plant_care: unknown notify channel %r", channel)
@@ -134,7 +142,10 @@ async def async_handle_action(hass, coordinator, payload) -> None:
     if sid not in coordinator.config_entry.subentries:
         return
     try:
-        if action in ("water", "feed"):
+        if action == SNOOZE_WATER:
+            days = coordinator.config_entry.options.get(CONF_SNOOZE_DAYS, DEFAULT_SNOOZE_DAYS)
+            await coordinator.async_snooze(sid, days)
+        elif action in ("water", "feed"):
             await coordinator.async_mark_done(sid, action)
         elif action == "treatment":
             sub = coordinator.config_entry.subentries[sid]
@@ -175,11 +186,19 @@ async def _tg_handle(hass, coordinator, opts, ns, data) -> None:
             and chat_id is not None
             and hass.services.has_service("telegram_bot", "edit_message")
         ):
-            # Keep the original reminder text and append a ✅ + date (like the
-            # legacy YAML), instead of replacing the whole message.
+            # Keep the original reminder text and append a status + date (like
+            # the legacy YAML), instead of replacing the whole message. A snooze
+            # tap shows the new due date; every other tap shows a ✅ completion.
+            # (async_handle_action already ran above, so the snapshot reflects
+            # the postponed next_water.)
             orig = message.get("text") or ""
-            stamp = dt_util.now().strftime("%d.%m")
-            edited = f"{orig} — ✅ {stamp}" if orig else f"✅ {stamp}"
+            decoded = decode_action(data)
+            if decoded and decoded[1] == SNOOZE_WATER:
+                nd = coordinator.snapshot(decoded[0], None, None).get("next_water")
+                suffix = f"⏰ до {nd.strftime('%d.%m')}" if nd else "⏰ отложено"
+            else:
+                suffix = f"✅ {dt_util.now().strftime('%d.%m')}"
+            edited = f"{orig} — {suffix}" if orig else suffix
             await hass.services.async_call("telegram_bot", "edit_message", {
                 "config_entry_id": cfg_entry,
                 "message_id": message_id,
