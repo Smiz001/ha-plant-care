@@ -57,6 +57,11 @@ CHANNEL_TELEGRAM = "telegram"
 CHANNEL_MOBILE_APP = "mobile_app"
 ACTIONS = ("water", "feed", "treatment")
 
+# snooze (postpone watering; v1 = water only)
+CONF_SNOOZE_DAYS = "snooze_days"
+DEFAULT_SNOOZE_DAYS = 2
+SNOOZE_WATER = "snooze_water"
+
 # weather-aware watering (opt-in)
 CONF_WEATHER_ENTITY = "weather_entity"
 CONF_WEATHER_ENABLED = "weather_enabled"

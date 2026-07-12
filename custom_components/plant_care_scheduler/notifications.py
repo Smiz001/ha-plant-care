@@ -15,6 +15,7 @@ from .const import (
     CONF_NOTIFICATIONS_ENABLED, CONF_NOTIFY_CHANNEL, CONF_REMINDER_TIME,
     CONF_TELEGRAM_CONFIG_ENTRY, CONF_TELEGRAM_CHAT_ID, CONF_MOBILE_APP_SERVICE,
     CONF_WEATHER_ENTITY, CHANNEL_TELEGRAM, CHANNEL_MOBILE_APP, DEFAULT_REMINDER_TIME, ACTIONS,
+    SNOOZE_WATER,
 )
 from .models import PlantConfig
 
@@ -38,7 +39,7 @@ def decode_action(payload: str | None) -> tuple[str, str] | None:
     if not payload:
         return None
     parts = payload.split("::")
-    if len(parts) == 3 and parts[0] == "pcs" and parts[2] in ACTIONS:
+    if len(parts) == 3 and parts[0] == "pcs" and (parts[2] in ACTIONS or parts[2] == SNOOZE_WATER):
         return parts[1], parts[2]
     return None
 

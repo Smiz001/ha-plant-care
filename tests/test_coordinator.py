@@ -160,3 +160,23 @@ async def test_treatment_snapshot_and_mark(hass, entry, freezer):
     await coord.async_clear_treatment("sub1")
     snap = coord.snapshot("sub1", None, None, treatment_name="Фунгицид", treatment_interval=3)
     assert snap["treatment_active"] is False
+
+
+async def test_snooze_pushes_next_water(hass, entry, freezer):
+    freezer.move_to("2026-06-28 08:00:00")
+    coord = PlantCareCoordinator(hass, entry)
+    await coord.async_load()
+    coord.ensure_seed("sub1", 5, 14, date(2026, 6, 28), date(2026, 7, 6))  # water due today, interval 5
+    await coord.async_snooze("sub1", 2)
+    snap = coord.snapshot("sub1", None, None)
+    assert snap["next_water"] == date(2026, 6, 30)   # today + 2
+    assert snap["needs_water"] is False
+
+
+async def test_snooze_capped_at_interval(hass, entry, freezer):
+    freezer.move_to("2026-06-28 08:00:00")
+    coord = PlantCareCoordinator(hass, entry)
+    await coord.async_load()
+    coord.ensure_seed("sub1", 3, 14, date(2026, 6, 28), date(2026, 7, 6))  # interval 3
+    await coord.async_snooze("sub1", 10)             # capped to interval 3
+    assert coord.snapshot("sub1", None, None)["next_water"] == date(2026, 7, 1)  # today + 3

@@ -284,6 +284,16 @@ class PlantCareCoordinator(DataUpdateCoordinator[dict[str, dict]]):
         await self._save()
         self.async_update_listeners()
 
+    async def async_snooze(self, subentry_id: str, days: int) -> None:
+        """Postpone watering by `days` (capped at the water interval); NOT a full reset."""
+        live = self._plant(subentry_id)
+        today = dt_util.now().date()
+        interval = int(live.get(CONF_WATER_INTERVAL, DEFAULT_WATER_INTERVAL))
+        bump = max(1, min(int(days), interval))
+        live[CONF_NEXT_WATER] = _iso(today + timedelta(days=bump))
+        await self._save()
+        self.async_update_listeners()
+
     async def async_set_treatment(self, subentry_id: str, next_treatment: date, treatments_left: int | None) -> None:
         p = self._plant(subentry_id)
         p[CONF_NEXT_TREATMENT] = next_treatment.isoformat()
